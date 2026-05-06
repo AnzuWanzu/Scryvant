@@ -1,7 +1,7 @@
 import User from "../models/User";
 import { Request, Response, NextFunction } from "express";
 
-export const getAllUser = async (
+export const getAllUsers = async (
   req: Request,
   res: Response,
   next: NextFunction,
@@ -17,6 +17,7 @@ export const getAllUser = async (
   }
 };
 
+//TODO:
 // export const createUser = async (
 //   req: Request,
 //   res: Response,
@@ -26,6 +27,7 @@ export const getAllUser = async (
 //   } catch (error) {}
 // };
 
+//TODO:
 // export const loginUser = async (
 //   req: Request,
 //   res: Response,
@@ -35,6 +37,7 @@ export const getAllUser = async (
 //   } catch (error) {}
 // };
 
+//TODO:
 // export const verifyUser = async (
 //   req: Request,
 //   res: Response,
@@ -44,6 +47,7 @@ export const getAllUser = async (
 //   } catch (error) {}
 // };
 
+//TODO:
 // export const logoutUser = async (
 //   req: Request,
 //   res: Response,
