@@ -12,7 +12,7 @@ export const getAllUser = async (
       .status(200)
       .json({ message: "Users retrieved successfully", users });
   } catch (error) {
-    console.log("Error in getAllUsers function:.", error);
+    console.log("Error in getAllUsers function:", error);
     return res.status(500).json({ message: "Failed to retrieve users" });
   }
 };

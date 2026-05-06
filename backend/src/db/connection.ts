@@ -7,7 +7,7 @@ export const connectDB = async () => {
     await connect(URI);
   } catch (error) {
     console.log(error);
-    throw new Error("Failed to connect to MongoDB.");
+    throw error;
   }
 };
 
@@ -16,6 +16,6 @@ export const disconnectDB = async () => {
     await disconnect();
   } catch (error) {
     console.log(error);
-    throw new Error("Failed to disconnect from MongoDB.");
+    throw error;
   }
 };
