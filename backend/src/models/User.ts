@@ -30,10 +30,6 @@ const userSchema = new mongoose.Schema(
       enum: ["player", "dm"],
       default: "player",
     },
-    createdAt: {
-      type: Date,
-      default: Date.now,
-    },
   },
   { timestamps: true }, //Automatically add createdAt and updatedAt
 );
