@@ -16,7 +16,7 @@ export const validate = (validators: ValidationChain[]) => {
 export const loginValidator = [
   body("username")
     .trim()
-    .escape() //strips html chars
+    .escape() //HTML-encodes special characters
     .notEmpty()
     .withMessage("Username is required"),
   body("password")
@@ -26,5 +26,5 @@ export const loginValidator = [
 
 export const signupValidator = [
   ...loginValidator,
-  body("email").isEmail().normalizeEmail().withMessage("Invalid email address"),
+  body("email").isEmail().withMessage("Invalid email address").normalizeEmail(),
 ];
