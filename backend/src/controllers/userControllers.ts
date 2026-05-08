@@ -31,8 +31,8 @@ export const createUser = async (
     const existingUser = await User.findOne({ email });
     if (existingUser)
       return res
-        .status(401)
-        .send("Email alread in use. Please login or use a different email.");
+        .status(409)
+        .send("Email already in use. Please login or use a different email.");
     //
     const hashedPassword = await hash(password, 10);
     const user = new User({ username, email, password: hashedPassword });
