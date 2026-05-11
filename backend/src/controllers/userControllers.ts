@@ -3,6 +3,7 @@ import { Request, Response, NextFunction } from "express";
 import { hash } from "bcryptjs";
 import { COOKIE_NAME } from "../utils/constants";
 import { createToken } from "../utils/tokenManager";
+import { compareOtp, generateOtp, hashOtp, sendOtpEmail } from "../utils/otp";
 
 export const getAllUsers = async (
   req: Request,
@@ -36,8 +37,67 @@ export const createUser = async (
 
     const hashedPassword = await hash(password, 10);
     const user = new User({ username, email, password: hashedPassword });
+
+    //Generate OTP, hash, and save to user.
+    const otp = generateOtp();
+    user.otp = await hashOtp(otp);
+    user.otpExpires = new Date(Date.now() + 10 * 60 * 1000);
     await user.save();
-    //Create cookie and store the token.
+
+    await sendOtpEmail(user.email, otp);
+
+    return res.status(201).json({
+      message: "User created successfully. Check your email for the OTP.",
+      name: user.username,
+      email: user.email,
+    });
+  } catch (error) {
+    console.log("Error in createUser function: ", error);
+    return res.status(500).json({ message: "Failed to create user" });
+  }
+};
+
+export const verifyOtp = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const { email, otp } = req.body;
+    const user = await User.findOne({ email }).select("+otp +otpExpires");
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (user.isVerified) {
+      return res.status(400).json({ message: "User is already verified" });
+    }
+
+    if (!user.otp || !user.otpExpires) {
+      return res.status(400).json({ message: "No OTP found for this user" });
+    }
+
+    if (user.otpExpires.getTime() < Date.now()) {
+      return res.status(400).json({ message: "OTP has expired" });
+    }
+
+    const isOtpValid = await compareOtp(otp, user.otp);
+
+    if (!isOtpValid) {
+      return res.status(400).json({ message: "Invalid OTP" });
+    }
+
+    user.isVerified = true;
+    user.otp = null;
+    user.otpExpires = null;
+    await user.save();
+
+    //Create JWT token and set the cookie.
+    const token = createToken(user._id, user.email, "5d");
+    const expires = new Date();
+    expires.setDate(expires.getDate() + 5);
+
     res.clearCookie(COOKIE_NAME, {
       httpOnly: true,
       signed: true,
@@ -46,9 +106,6 @@ export const createUser = async (
       sameSite: "none",
     });
 
-    const token = createToken(user._id, user.email, "5d");
-    const expires = new Date();
-    expires.setDate(expires.getDate() + 5); //Set cookie to expire in 5 days.
     res.cookie(COOKIE_NAME, token, {
       path: "/",
       expires,
@@ -57,14 +114,14 @@ export const createUser = async (
       sameSite: "none",
     });
 
-    return res.status(201).json({
-      message: "User Created Successfully",
+    return res.status(200).json({
+      message: "User verified successfully",
       name: user.username,
       email: user.email,
     });
   } catch (error) {
-    console.log("Error in createUser function: ", error);
-    return res.status(500).json({ message: "Failed to create user" });
+    console.log("Error in verifyOtp function: ", error);
+    return res.status(500).json({ message: "Failed to verify OTP" });
   }
 };
 
