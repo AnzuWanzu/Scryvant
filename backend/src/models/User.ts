@@ -25,11 +25,6 @@ const userSchema = new mongoose.Schema(
       required: true,
       select: false,
     },
-    role: {
-      type: String,
-      enum: ["player", "dm"],
-      default: "player",
-    },
   },
   { timestamps: true }, //Automatically add createdAt and updatedAt
 );
