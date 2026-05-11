@@ -25,10 +25,16 @@ const userSchema = new mongoose.Schema(
       required: true,
       select: false,
     },
-    role: {
+    isVerified: {
+      type: Boolean,
+      default: false,
+    },
+    otp: {
       type: String,
-      enum: ["player", "dm"],
-      default: "player",
+      select: false,
+    },
+    otpExpires: {
+      type: Date,
     },
   },
   { timestamps: true }, //Automatically add createdAt and updatedAt
