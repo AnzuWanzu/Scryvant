@@ -28,12 +28,20 @@ export const createUser = async (
 ) => {
   try {
     const { username, email, password } = req.body;
+
     //Validations:
-    const existingUser = await User.findOne({ email });
-    if (existingUser)
-      return res
-        .status(409)
-        .send("Email already in use. Please login or use a different email.");
+    const existingUser = await User.findOne({
+      $or: [{ email }, { username }],
+    });
+
+    if (existingUser) {
+      const message =
+        existingUser.email === email
+          ? "Email already in use"
+          : "Username already taken";
+
+      return res.status(409).json({ message });
+    }
 
     const hashedPassword = await hash(password, 10);
     const user = new User({ username, email, password: hashedPassword });
@@ -154,3 +162,4 @@ export const verifyOtp = async (
 //   try {
 //   } catch (error) {}
 // };
+s;
