@@ -26,14 +26,23 @@ export const createUser = async (
   res: Response,
   next: NextFunction,
 ) => {
+  let createdUserId: string | null = null;
   try {
     const { username, email, password } = req.body;
+
     //Validations:
-    const existingUser = await User.findOne({ email });
-    if (existingUser)
-      return res
-        .status(409)
-        .send("Email already in use. Please login or use a different email.");
+    const existingUser = await User.findOne({
+      $or: [{ email }, { username }],
+    });
+
+    if (existingUser) {
+      const message =
+        existingUser.email === email
+          ? "Email already in use"
+          : "Username already taken";
+
+      return res.status(409).json({ message });
+    }
 
     const hashedPassword = await hash(password, 10);
     const user = new User({ username, email, password: hashedPassword });
@@ -43,6 +52,7 @@ export const createUser = async (
     user.otp = await hashOtp(otp);
     user.otpExpires = new Date(Date.now() + 10 * 60 * 1000);
     await user.save();
+    createdUserId = user._id;
 
     await sendOtpEmail(user.email, otp);
 
@@ -53,6 +63,18 @@ export const createUser = async (
     });
   } catch (error) {
     console.log("Error in createUser function: ", error);
+
+    if (createdUserId) {
+      try {
+        await User.deleteOne({ _id: createdUserId });
+      } catch (rollbackError) {
+        console.log(
+          "Error rolling back user after OTP email failure: ",
+          rollbackError,
+        );
+      }
+    }
+
     return res.status(500).json({ message: "Failed to create user" });
   }
 };
@@ -88,15 +110,16 @@ export const verifyOtp = async (
       return res.status(400).json({ message: "Invalid OTP" });
     }
 
+    //Create JWT token first (fail early if config is missing)
+    const token = createToken(user._id, user.email, "5d");
+    const expires = new Date();
+    expires.setDate(expires.getDate() + 5);
+
+    //Clear OTP
     user.isVerified = true;
     user.otp = null;
     user.otpExpires = null;
     await user.save();
-
-    //Create JWT token and set the cookie.
-    const token = createToken(user._id, user.email, "5d");
-    const expires = new Date();
-    expires.setDate(expires.getDate() + 5);
 
     res.clearCookie(COOKIE_NAME, {
       httpOnly: true,
@@ -112,6 +135,7 @@ export const verifyOtp = async (
       httpOnly: true,
       secure: true,
       sameSite: "none",
+      signed: true,
     });
 
     return res.status(200).json({
