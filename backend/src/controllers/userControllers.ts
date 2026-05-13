@@ -134,6 +134,7 @@ export const verifyOtp = async (
       httpOnly: true,
       secure: true,
       sameSite: "none",
+      signed: true,
     });
 
     return res.status(200).json({
