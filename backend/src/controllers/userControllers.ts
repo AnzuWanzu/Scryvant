@@ -26,6 +26,7 @@ export const createUser = async (
   res: Response,
   next: NextFunction,
 ) => {
+  let createdUserId: string | null = null;
   try {
     const { username, email, password } = req.body;
 
@@ -51,6 +52,7 @@ export const createUser = async (
     user.otp = await hashOtp(otp);
     user.otpExpires = new Date(Date.now() + 10 * 60 * 1000);
     await user.save();
+    createdUserId = user._id;
 
     await sendOtpEmail(user.email, otp);
 
@@ -61,6 +63,18 @@ export const createUser = async (
     });
   } catch (error) {
     console.log("Error in createUser function: ", error);
+
+    if (createdUserId) {
+      try {
+        await User.deleteOne({ _id: createdUserId });
+      } catch (rollbackError) {
+        console.log(
+          "Error rolling back user after OTP email failure: ",
+          rollbackError,
+        );
+      }
+    }
+
     return res.status(500).json({ message: "Failed to create user" });
   }
 };
@@ -162,4 +176,3 @@ export const verifyOtp = async (
 //   try {
 //   } catch (error) {}
 // };
-s;
