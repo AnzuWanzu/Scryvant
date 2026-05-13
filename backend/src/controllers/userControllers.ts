@@ -110,15 +110,16 @@ export const verifyOtp = async (
       return res.status(400).json({ message: "Invalid OTP" });
     }
 
+    //Create JWT token first (fail early if config is missing)
+    const token = createToken(user._id, user.email, "5d");
+    const expires = new Date();
+    expires.setDate(expires.getDate() + 5);
+
+    //Clear OTP
     user.isVerified = true;
     user.otp = null;
     user.otpExpires = null;
     await user.save();
-
-    //Create JWT token and set the cookie.
-    const token = createToken(user._id, user.email, "5d");
-    const expires = new Date();
-    expires.setDate(expires.getDate() + 5);
 
     res.clearCookie(COOKIE_NAME, {
       httpOnly: true,
