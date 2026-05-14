@@ -4,6 +4,7 @@ import {
   getAllUsers,
   verifyOtp,
   loginUser,
+  verifyUser,
 } from "../controllers/userControllers";
 import {
   validate,
@@ -11,6 +12,7 @@ import {
   loginValidator,
   verifyOtpValidator,
 } from "../utils/validator";
+import { verifyToken } from "../utils/tokenManager";
 
 const userRoutes = Router();
 
@@ -21,5 +23,7 @@ userRoutes.post("/signup", validate(signupValidator), createUser);
 userRoutes.post("/verify-otp", validate(verifyOtpValidator), verifyOtp);
 
 userRoutes.post("/login", validate(loginValidator), loginUser);
+
+userRoutes.get("/verifyUser", verifyToken, verifyUser);
 
 export default userRoutes;
