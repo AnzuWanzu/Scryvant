@@ -1,7 +1,11 @@
 import User from "../models/User";
 import { Request, Response, NextFunction } from "express";
-import { hash } from "bcryptjs";
-import { COOKIE_NAME } from "../utils/constants";
+import { compare, hash } from "bcryptjs";
+import {
+  COOKIE_NAME,
+  TOKEN_EXPIRY_STRING,
+  TOKEN_EXPIRY_DAYS,
+} from "../utils/constants";
 import { createToken } from "../utils/tokenManager";
 import { compareOtp, generateOtp, hashOtp, sendOtpEmail } from "../utils/otp";
 
@@ -111,9 +115,9 @@ export const verifyOtp = async (
     }
 
     //Create JWT token first (fail early if config is missing)
-    const token = createToken(user._id, user.email, "5d");
+    const token = createToken(user._id, user.email, TOKEN_EXPIRY_STRING);
     const expires = new Date();
-    expires.setDate(expires.getDate() + 5);
+    expires.setDate(expires.getDate() + TOKEN_EXPIRY_DAYS);
 
     //Clear OTP
     user.isVerified = true;
@@ -139,8 +143,8 @@ export const verifyOtp = async (
     });
 
     return res.status(200).json({
-      message: "User verified successfully",
-      name: user.username,
+      message: "User verified successfully. Added to system.",
+      username: user.username,
       email: user.email,
     });
   } catch (error) {
@@ -149,25 +153,79 @@ export const verifyOtp = async (
   }
 };
 
-//TODO:
-// export const loginUser = async (
-//   req: Request,
-//   res: Response,
-//   next: NextFunction,
-// ) => {
-//   try {
-//   } catch (error) {}
-// };
+export const loginUser = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const { email, password } = req.body;
 
-//TODO:
-// export const verifyUser = async (
-//   req: Request,
-//   res: Response,
-//   next: NextFunction,
-// ) => {
-//   try {
-//   } catch (error) {}
-// };
+    //Validations:
+    const user = await User.findOne({ email }).select("+password");
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const isPasswordCorrect = await compare(password, user.password);
+    if (!isPasswordCorrect) {
+      return res.status(400).json({ message: "Invalid credentials" });
+    }
+
+    //Clear cookie and Generate new Token:
+    res.clearCookie(COOKIE_NAME, {
+      httpOnly: true,
+      signed: true,
+      path: "/",
+      secure: true,
+      sameSite: "none",
+    });
+
+    const token = createToken(user._id, user.email, TOKEN_EXPIRY_STRING);
+    const expires = new Date();
+    expires.setDate(expires.getDate() + TOKEN_EXPIRY_DAYS);
+
+    res.cookie(COOKIE_NAME, token, {
+      path: "/",
+      expires,
+      httpOnly: true,
+      secure: true,
+      sameSite: "none",
+      signed: true,
+    });
+
+    return res.status(200).json({
+      message: "Sucessfully logged in a user: ",
+      username: user.username,
+      email: user.email,
+    });
+  } catch (error) {
+    console.log("Error in loginUser function: ", error);
+    return res.status(500).json({ message: "Failed to login user" });
+  }
+};
+
+export const verifyUser = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    //User token Check:
+    const user = await User.findById(res.locals.jwtData.id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    return res.status(200).json({
+      message: "User is authenticated",
+      username: user.username,
+      email: user.email,
+    });
+  } catch (error) {
+    console.log("Error in verifyUser function: ", error);
+    return res.status(500).json({ message: "Failed to verify user" });
+  }
+};
 
 //TODO:
 // export const logoutUser = async (

@@ -14,11 +14,7 @@ export const validate = (validators: ValidationChain[]) => {
 };
 
 export const loginValidator = [
-  body("username")
-    .trim()
-    .escape() //HTML-encodes special characters
-    .notEmpty()
-    .withMessage("Username is required"),
+  body("email").isEmail().withMessage("Invalid email address").normalizeEmail(),
   body("password")
     .isLength({ min: 6 })
     .withMessage("Password must be at least 6 characters long"),
@@ -26,7 +22,11 @@ export const loginValidator = [
 
 export const signupValidator = [
   ...loginValidator,
-  body("email").isEmail().withMessage("Invalid email address").normalizeEmail(),
+  body("username")
+    .trim()
+    .escape() //HTML-encodes special characters
+    .notEmpty()
+    .withMessage("Username is required"),
 ];
 
 export const verifyOtpValidator = [
