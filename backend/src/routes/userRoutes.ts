@@ -5,6 +5,7 @@ import {
   verifyOtp,
   loginUser,
   verifyUser,
+  logoutUser,
 } from "../controllers/userControllers";
 import {
   validate,
@@ -25,5 +26,7 @@ userRoutes.post("/verify-otp", validate(verifyOtpValidator), verifyOtp);
 userRoutes.post("/login", validate(loginValidator), loginUser);
 
 userRoutes.get("/verifyUser", verifyToken, verifyUser);
+
+userRoutes.get("/logout", verifyToken, logoutUser);
 
 export default userRoutes;

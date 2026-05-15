@@ -227,12 +227,27 @@ export const verifyUser = async (
   }
 };
 
-//TODO:
-// export const logoutUser = async (
-//   req: Request,
-//   res: Response,
-//   next: NextFunction,
-// ) => {
-//   try {
-//   } catch (error) {}
-// };
+export const logoutUser = async (req: Request, res: Response) => {
+  try {
+    res.clearCookie(COOKIE_NAME, {
+      httpOnly: true,
+      signed: true,
+      path: "/",
+      secure: true,
+      sameSite: "none",
+    });
+
+    const user = await User.findById(res.locals.jwtData.id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    return res.status(200).json({
+      message: "User logged out successfully",
+      username: user.username || "Guest",
+    });
+  } catch (error) {
+    console.log("Error in logoutUser function: ", error);
+    return res.status(500).json({ message: "Failed to logout user" });
+  }
+};
