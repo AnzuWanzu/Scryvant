@@ -1,5 +1,5 @@
 import User from "../models/User";
-import { Request, Response, NextFunction } from "express";
+import { Request, Response } from "express";
 import { compare, hash } from "bcryptjs";
 import {
   COOKIE_NAME,
@@ -9,11 +9,7 @@ import {
 import { createToken } from "../utils/tokenManager";
 import { compareOtp, generateOtp, hashOtp, sendOtpEmail } from "../utils/otp";
 
-export const getAllUsers = async (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) => {
+export const getAllUsers = async (req: Request, res: Response) => {
   try {
     const users = await User.find();
     return res
@@ -25,11 +21,7 @@ export const getAllUsers = async (
   }
 };
 
-export const createUser = async (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) => {
+export const createUser = async (req: Request, res: Response) => {
   let createdUserId: string | null = null;
   try {
     const { username, email, password } = req.body;
@@ -83,11 +75,7 @@ export const createUser = async (
   }
 };
 
-export const verifyOtp = async (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) => {
+export const verifyOtp = async (req: Request, res: Response) => {
   try {
     const { email, otp } = req.body;
     const user = await User.findOne({ email }).select("+otp +otpExpires");
@@ -153,11 +141,7 @@ export const verifyOtp = async (
   }
 };
 
-export const loginUser = async (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) => {
+export const loginUser = async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
 
@@ -205,11 +189,7 @@ export const loginUser = async (
   }
 };
 
-export const verifyUser = async (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) => {
+export const verifyUser = async (req: Request, res: Response) => {
   try {
     //User token Check:
     const user = await User.findById(res.locals.jwtData.id);
