@@ -1,0 +1,21 @@
+#!/usr/bin/env sh
+
+# Get the current branch name
+local_branch_name="$(git rev-parse --abbrev-ref HEAD)"
+
+# Define the RegEx pattern for valid branch names
+valid_branch_regex="^(feature|bugfix|hotfix|chore|docs|refactor)/[a-zA-Z0-9._-]+$"
+
+# Skip validation for 'main' or 'dev' branches
+if [ "$local_branch_name" = "main" ] || [ "$local_branch_name" = "dev" ]; then
+    exit 0
+fi
+
+# Check if the branch name matches the regex
+if ! echo "$local_branch_name" | grep -Eq "$valid_branch_regex"; then
+    echo "❌ [Husky] Invalid branch name: '$local_branch_name'"
+    echo "Branch names must follow the convention: prefix/branch-description"
+    echo "Allowed prefixes: feature/, bugfix/, hotfix/, chore/, docs/, refactor/"
+    echo "Example: feature/login-page-validation"
+    exit 1
+fi

@@ -1,0 +1,21 @@
+#!/usr/bin/env sh
+
+commit_message_file="$1"
+commit_message="$(head -n 1 "$commit_message_file")"
+
+if ! printf '%s\n' "$commit_message" | grep -Eq '^\[(Chore|Feature|Fix|Setup|Merge)\]: [^[:space:]].*$'; then
+	echo "❌ [Husky] Invalid commit message format."
+	echo "Use: [Type]: Details"
+	echo "Types: Chore, Feature, Fix, Setup, Merge"
+	echo "Details limit: up to 12 words"
+	exit 1
+fi
+
+details="${commit_message#*: }"
+word_count="$(printf '%s\n' "$details" | awk '{print NF}')"
+
+if [ "$word_count" -gt 12 ]; then
+	echo "❌ [Husky] Commit details are too long."
+	echo "Limit the details to 12 words or fewer."
+	exit 1
+fi
