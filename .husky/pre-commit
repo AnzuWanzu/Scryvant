@@ -12,21 +12,20 @@ fi
 local_branch_name="$(git rev-parse --abbrev-ref HEAD)"
 valid_branch_regex="^(feature|bugfix|hotfix|chore|docs|refactor)/[a-zA-Z0-9._-]+$"
 
-if [ "$local_branch_name" = "main" ] || [ "$local_branch_name" = "dev" ]; then
-	exit 0
+if [ "$local_branch_name" != "main" ] && [ "$local_branch_name" != "dev" ] && ! echo "$local_branch_name" | grep -Eq "$valid_branch_regex"; then
+	echo "❌ [Husky] Invalid branch name: '$local_branch_name'"
+	echo "Branch names must follow the convention: prefix/branch-description"
+	echo "Allowed prefixes: feature/, bugfix/, hotfix/, chore/, docs/, refactor/"
+	echo "Example: feature/login-page-validation"
+	echo "Reverting to the previous branch and deleting '$local_branch_name'."
+
+	HUSKY_BRANCH_FIXING=1 git checkout -q - >/dev/null 2>&1 || true
+	HUSKY_BRANCH_FIXING=1 git branch -D "$local_branch_name" >/dev/null 2>&1 || true
+
+	exit 1
 fi
 
-if echo "$local_branch_name" | grep -Eq "$valid_branch_regex"; then
-	exit 0
+if ! npx --no-install lint-staged; then
+	echo "❌ [Husky] lint-staged checks failed. Fix the reported issues and try again."
+	exit 1
 fi
-
-echo "❌ [Husky] Invalid branch name: '$local_branch_name'"
-echo "Branch names must follow the convention: prefix/branch-description"
-echo "Allowed prefixes: feature/, bugfix/, hotfix/, chore/, docs/, refactor/"
-echo "Example: feature/login-page-validation"
-echo "Reverting to the previous branch and deleting '$local_branch_name'."
-
-HUSKY_BRANCH_FIXING=1 git checkout -q - >/dev/null 2>&1 || true
-HUSKY_BRANCH_FIXING=1 git branch -D "$local_branch_name" >/dev/null 2>&1 || true
-
-exit 1
