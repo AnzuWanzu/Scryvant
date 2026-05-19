@@ -1,31 +1,37 @@
-#!/usr/bin/env sh
-
+# Only run if we aren't currently executing our own branch-fixing logic
 if [ "${HUSKY_BRANCH_FIXING-}" = "1" ]; then
-	exit 0
+    exit 0
 fi
 
 # Only enforce when a branch checkout happened, not when files are restored.
 if [ "$3" != "1" ]; then
-	exit 0
+    exit 0
 fi
+
+RED='\033[1;31m'       # Bold Red
+YELLOW='\033[1;33m'    # Bold Yellow
+CYAN='\033[1;36m'      # Bold Cyan
+DIM='\033[2m'          # Dimmed/Grey text
+NC='\033[0m'           # No Color (Reset)
 
 local_branch_name="$(git rev-parse --abbrev-ref HEAD)"
 valid_branch_regex="^(feature|bugfix|hotfix|chore|docs|refactor)/[a-zA-Z0-9._-]+$"
 
 if [ "$local_branch_name" = "main" ] || [ "$local_branch_name" = "dev" ]; then
-	exit 0
+    exit 0
 fi
 
 if echo "$local_branch_name" | grep -Eq "$valid_branch_regex"; then
-	exit 0
+    exit 0
 fi
 
-echo "❌ [Husky] Invalid branch name: '$local_branch_name'"
-echo "Branch names must follow the convention: prefix/branch-description"
-echo "Allowed prefixes: feature/, bugfix/, hotfix/, chore/, docs/, refactor/"
-echo "Example: feature/login-page-validation"
-echo "Reverting to the previous branch and deleting '$local_branch_name'."
+echo -e "${RED}❌ [Husky] Invalid branch name:${NC} '${YELLOW}$local_branch_name${NC}'"
+echo -e "Branch names ${CYAN}must${NC} follow the convention: ${DIM}prefix/branch-description${NC}"
+echo -e "Allowed prefixes: ${CYAN}feature/, bugfix/, hotfix/, chore/, docs/, refactor/${NC}"
+echo -e "Example: ${YELLOW}feature/login-page-validation${NC}"
+echo -e "${RED}Reverting to the previous branch and deleting${NC} '${YELLOW}$local_branch_name${NC}'."
 
+# Self-healing logic: swap back and delete the bad branch
 HUSKY_BRANCH_FIXING=1 git checkout -q - >/dev/null 2>&1 || true
 HUSKY_BRANCH_FIXING=1 git branch -D "$local_branch_name" >/dev/null 2>&1 || true
 
