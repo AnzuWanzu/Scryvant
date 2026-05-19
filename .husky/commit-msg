@@ -1,21 +1,25 @@
-#!/usr/bin/env sh
-
 commit_message_file="$1"
 commit_message="$(head -n 1 "$commit_message_file")"
 
+RED='\033[1;31m'       # Bold Red
+YELLOW='\033[1;33m'    # Bold Yellow
+CYAN='\033[1;36m'      # Bold Cyan
+DIM='\033[2m'          # Dimmed/Grey text
+NC='\033[0m'           # No Color (Reset)
+
 if ! printf '%s\n' "$commit_message" | grep -Eq '^\[(Chore|Feature|Fix|Setup|Merge)\]: [^[:space:]].*$'; then
-	echo "❌ [Husky] Invalid commit message format."
-	echo "Use: [Type]: Details"
-	echo "Types: Chore, Feature, Fix, Setup, Merge"
-	echo "Details limit: up to 12 words"
-	exit 1
+    echo -e "${RED}❌ [Husky] Invalid commit message format.${NC}"
+    echo -e "Use the convention: ${YELLOW}[Type]: Details${NC}"
+    echo -e "Allowed types: ${CYAN}Chore, Feature, Fix, Setup, Merge${NC}"
+    echo -e "Example: ${DIM}[Feature]: Add login validation logic${NC}"
+    exit 1
 fi
 
 details="${commit_message#*: }"
 word_count="$(printf '%s\n' "$details" | awk '{print NF}')"
 
 if [ "$word_count" -gt 12 ]; then
-	echo "❌ [Husky] Commit details are too long."
-	echo "Limit the details to 12 words or fewer."
-	exit 1
+    echo -e "${RED}❌ [Husky] Commit details are too long.${NC}"
+    echo -e "Your message has ${YELLOW}$word_count${NC} words. Limit details to ${CYAN}12 words${NC} or fewer."
+    exit 1
 fi
