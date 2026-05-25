@@ -44,7 +44,7 @@ export const findUser = async (req: Request, res: Response) => {
     }
 
     return res.status(200).json({
-      message: "User foundsuccessfully",
+      message: "User found successfully",
       id: user._id,
       username: user.username || "Guest",
       email: user.email,
