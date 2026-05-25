@@ -38,3 +38,22 @@ export const verifyOtpValidator = [
     .isNumeric()
     .withMessage("OTP must contain only digits"),
 ];
+
+export const deleteUserValidator = [
+  body().custom((_, { req }) => {
+    const { userId, email, username } = req.body;
+
+    if (!userId && !email && !username) {
+      throw new Error("Provide userId, email, or username");
+    }
+
+    return true;
+  }),
+  body("userId").optional().trim().notEmpty(),
+  body("email")
+    .optional()
+    .isEmail()
+    .withMessage("Invalid email address")
+    .normalizeEmail(),
+  body("username").optional().trim().notEmpty(),
+];

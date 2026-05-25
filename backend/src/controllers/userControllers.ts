@@ -1,5 +1,5 @@
 import User from "../models/User";
-import { Request, Response, NextFunction } from "express";
+import { Request, Response } from "express";
 import { compare, hash } from "bcryptjs";
 import {
   COOKIE_NAME,
@@ -9,11 +9,7 @@ import {
 import { createToken } from "../utils/tokenManager";
 import { compareOtp, generateOtp, hashOtp, sendOtpEmail } from "../utils/otp";
 
-export const getAllUsers = async (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) => {
+export const getAllUsers = async (req: Request, res: Response) => {
   try {
     const users = await User.find();
     return res
@@ -25,11 +21,7 @@ export const getAllUsers = async (
   }
 };
 
-export const createUser = async (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) => {
+export const createUser = async (req: Request, res: Response) => {
   let createdUserId: string | null = null;
   try {
     const { username, email, password } = req.body;
@@ -83,11 +75,7 @@ export const createUser = async (
   }
 };
 
-export const verifyOtp = async (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) => {
+export const verifyOtp = async (req: Request, res: Response) => {
   try {
     const { email, otp } = req.body;
     const user = await User.findOne({ email }).select("+otp +otpExpires");
@@ -146,6 +134,7 @@ export const verifyOtp = async (
       message: "User verified successfully. Added to system.",
       username: user.username,
       email: user.email,
+      isAdmin: user.isAdmin,
     });
   } catch (error) {
     console.log("Error in verifyOtp function: ", error);
@@ -153,11 +142,7 @@ export const verifyOtp = async (
   }
 };
 
-export const loginUser = async (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) => {
+export const loginUser = async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
 
@@ -198,6 +183,7 @@ export const loginUser = async (
       message: "Sucessfully logged in a user: ",
       username: user.username,
       email: user.email,
+      isAdmin: user.isAdmin,
     });
   } catch (error) {
     console.log("Error in loginUser function: ", error);
@@ -205,11 +191,7 @@ export const loginUser = async (
   }
 };
 
-export const verifyUser = async (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) => {
+export const verifyUser = async (req: Request, res: Response) => {
   try {
     //User token Check:
     const user = await User.findById(res.locals.jwtData.id);
@@ -220,6 +202,7 @@ export const verifyUser = async (
       message: "User is authenticated",
       username: user.username,
       email: user.email,
+      isAdmin: user.isAdmin,
     });
   } catch (error) {
     console.log("Error in verifyUser function: ", error);
@@ -245,9 +228,54 @@ export const logoutUser = async (req: Request, res: Response) => {
     return res.status(200).json({
       message: "User logged out successfully",
       username: user.username || "Guest",
+      isAdmin: user.isAdmin,
     });
   } catch (error) {
     console.log("Error in logoutUser function: ", error);
     return res.status(500).json({ message: "Failed to logout user" });
+  }
+};
+
+export const deleteUser = async (req: Request, res: Response) => {
+  try {
+    const { userId, email, username } = req.body;
+
+    const query = userId
+      ? { _id: userId }
+      : email
+        ? { email: String(email) }
+        : username
+          ? { username: String(username) }
+          : null;
+
+    if (!query) {
+      return res
+        .status(400)
+        .json({ message: "Provide userId, email, or username to delete" });
+    }
+
+    const user = await User.findOneAndDelete(query);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (res.locals.jwtData?.id === user._id) {
+      res.clearCookie(COOKIE_NAME, {
+        httpOnly: true,
+        signed: true,
+        path: "/",
+        secure: true,
+        sameSite: "none",
+      });
+    }
+
+    return res.status(200).json({
+      message: "User deleted successfully",
+      username: user.username || "Guest",
+      email: user.email,
+    });
+  } catch (error) {
+    console.log("Error in deleteUser function: ", error);
+    return res.status(500).json({ message: "Failed to delete user" });
   }
 };
