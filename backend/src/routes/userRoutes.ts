@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {
   createUser,
+  findUser,
   getAllUsers,
   verifyOtp,
   loginUser,
@@ -20,6 +21,8 @@ import { requireAdmin, verifyToken } from "../utils/tokenManager";
 const userRoutes = Router();
 
 userRoutes.get("/", getAllUsers);
+
+userRoutes.get("/find", verifyToken, requireAdmin, findUser);
 
 userRoutes.post("/signup", validate(signupValidator), createUser);
 

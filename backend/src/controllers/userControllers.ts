@@ -21,6 +21,41 @@ export const getAllUsers = async (req: Request, res: Response) => {
   }
 };
 
+export const findUser = async (req: Request, res: Response) => {
+  try {
+    const { userId, email, username } = req.body;
+    const query = userId
+      ? { _id: userId }
+      : email
+        ? { email: String(email) }
+        : username
+          ? { username: String(username) }
+          : null;
+
+    if (!query) {
+      return res
+        .status(400)
+        .json({ message: "Provide userId, email, or username to find user." });
+    }
+
+    const user = await User.findOne(query);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    return res.status(200).json({
+      message: "User foundsuccessfully",
+      id: user._id,
+      username: user.username || "Guest",
+      email: user.email,
+      isAdmin: user.isAdmin,
+    });
+  } catch (error) {
+    console.log("Error in findUser function: ", error);
+    return res.status(500).json({ message: "Failed to find user" });
+  }
+};
+
 export const createUser = async (req: Request, res: Response) => {
   let createdUserId: string | null = null;
   try {
