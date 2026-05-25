@@ -231,3 +231,47 @@ export const logoutUser = async (req: Request, res: Response) => {
     return res.status(500).json({ message: "Failed to logout user" });
   }
 };
+
+export const deleteUser = async (req: Request, res: Response) => {
+  try {
+    const { userId, email, username } = req.body;
+
+    const query = userId
+      ? { _id: userId }
+      : email
+        ? { email: String(email) }
+        : username
+          ? { username: String(username) }
+          : null;
+
+    if (!query) {
+      return res
+        .status(400)
+        .json({ message: "Provide userId, email, or username to delete" });
+    }
+
+    const user = await User.findOneAndDelete(query);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (res.locals.jwtData?.id === user._id) {
+      res.clearCookie(COOKIE_NAME, {
+        httpOnly: true,
+        signed: true,
+        path: "/",
+        secure: true,
+        sameSite: "none",
+      });
+    }
+
+    return res.status(200).json({
+      message: "User deleted successfully",
+      username: user.username || "Guest",
+      email: user.email,
+    });
+  } catch (error) {
+    console.log("Error in deleteUser function: ", error);
+    return res.status(500).json({ message: "Failed to delete user" });
+  }
+};

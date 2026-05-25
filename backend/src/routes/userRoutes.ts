@@ -6,12 +6,14 @@ import {
   loginUser,
   verifyUser,
   logoutUser,
+  deleteUser,
 } from "../controllers/userControllers";
 import {
   validate,
   signupValidator,
   loginValidator,
   verifyOtpValidator,
+  deleteUserValidator,
 } from "../utils/validator";
 import { verifyToken } from "../utils/tokenManager";
 
@@ -28,5 +30,12 @@ userRoutes.post("/login", validate(loginValidator), loginUser);
 userRoutes.get("/verifyUser", verifyToken, verifyUser);
 
 userRoutes.get("/logout", verifyToken, logoutUser);
+
+userRoutes.delete(
+  "/delete",
+  verifyToken,
+  validate(deleteUserValidator),
+  deleteUser,
+);
 
 export default userRoutes;
