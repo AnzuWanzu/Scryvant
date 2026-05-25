@@ -15,7 +15,7 @@ import {
   verifyOtpValidator,
   deleteUserValidator,
 } from "../utils/validator";
-import { verifyToken } from "../utils/tokenManager";
+import { requireAdmin, verifyToken } from "../utils/tokenManager";
 
 const userRoutes = Router();
 
@@ -34,6 +34,7 @@ userRoutes.get("/logout", verifyToken, logoutUser);
 userRoutes.delete(
   "/delete",
   verifyToken,
+  requireAdmin,
   validate(deleteUserValidator),
   deleteUser,
 );

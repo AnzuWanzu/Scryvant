@@ -134,6 +134,7 @@ export const verifyOtp = async (req: Request, res: Response) => {
       message: "User verified successfully. Added to system.",
       username: user.username,
       email: user.email,
+      isAdmin: user.isAdmin,
     });
   } catch (error) {
     console.log("Error in verifyOtp function: ", error);
@@ -182,6 +183,7 @@ export const loginUser = async (req: Request, res: Response) => {
       message: "Sucessfully logged in a user: ",
       username: user.username,
       email: user.email,
+      isAdmin: user.isAdmin,
     });
   } catch (error) {
     console.log("Error in loginUser function: ", error);
@@ -200,6 +202,7 @@ export const verifyUser = async (req: Request, res: Response) => {
       message: "User is authenticated",
       username: user.username,
       email: user.email,
+      isAdmin: user.isAdmin,
     });
   } catch (error) {
     console.log("Error in verifyUser function: ", error);
@@ -225,6 +228,7 @@ export const logoutUser = async (req: Request, res: Response) => {
     return res.status(200).json({
       message: "User logged out successfully",
       username: user.username || "Guest",
+      isAdmin: user.isAdmin,
     });
   } catch (error) {
     console.log("Error in logoutUser function: ", error);

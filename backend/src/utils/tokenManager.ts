@@ -52,3 +52,34 @@ export const verifyToken = async (
     );
   });
 };
+
+export const requireAdmin = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const userId = res.locals.jwtData?.id;
+
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const user = await import("../models/User").then((module) =>
+      module.default.findById(userId).select("isAdmin"),
+    );
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (!user.isAdmin) {
+      return res.status(403).json({ message: "Admin access required" });
+    }
+
+    return next();
+  } catch (error) {
+    console.log("Error in requireAdmin middleware: ", error);
+    return res.status(500).json({ message: "Failed to verify admin access" });
+  }
+};
