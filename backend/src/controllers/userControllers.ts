@@ -179,6 +179,16 @@ export const verifyOtp = async (req: Request, res: Response) => {
 
 export const loginUser = async (req: Request, res: Response) => {
   try {
+    const existingToken =
+      req.signedCookies?.[COOKIE_NAME] || req.cookies?.[COOKIE_NAME];
+
+    if (existingToken) {
+      return res.status(400).json({
+        message:
+          "You are already logged in. Please log out first before switching accounts.",
+      });
+    }
+
     const { email, password } = req.body;
 
     //Validations:
@@ -261,9 +271,7 @@ export const logoutUser = async (req: Request, res: Response) => {
     }
 
     return res.status(200).json({
-      message: "User logged out successfully",
-      username: user.username || "Guest",
-      isAdmin: user.isAdmin,
+      message: "User logged out successfully. Session cleared.",
     });
   } catch (error) {
     console.log("Error in logoutUser function: ", error);
