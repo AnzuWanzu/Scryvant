@@ -27,6 +27,15 @@ export const signupValidator = [
     .escape() //HTML-encodes special characters
     .notEmpty()
     .withMessage("Username is required"),
+
+  body("isAdmin").custom((value, { req }) => {
+    if (req.body && "isAdmin" in req.body) {
+      throw new Error(
+        "You are not authorized to set administrative privileges.",
+      );
+    }
+    return true;
+  }),
 ];
 
 export const verifyOtpValidator = [
