@@ -20,7 +20,7 @@ import { requireAdmin, verifyToken } from "../utils/tokenManager";
 
 const userRoutes = Router();
 
-userRoutes.get("/", getAllUsers);
+userRoutes.get("/", verifyToken, requireAdmin, getAllUsers);
 
 userRoutes.post("/find", verifyToken, requireAdmin, findUser);
 
