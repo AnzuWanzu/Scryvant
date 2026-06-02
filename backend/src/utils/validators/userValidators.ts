@@ -1,17 +1,4 @@
-import { Request, Response, NextFunction } from "express";
-import { body, validationResult, ValidationChain } from "express-validator";
-
-export const validate = (validators: ValidationChain[]) => {
-  return [
-    ...validators,
-    (req: Request, res: Response, next: NextFunction) => {
-      const errors = validationResult(req);
-      if (!errors.isEmpty())
-        return res.status(400).json({ errors: errors.array() });
-      next();
-    },
-  ];
-};
+import { body } from "express-validator";
 
 export const loginValidator = [
   body("email").isEmail().withMessage("Invalid email address").normalizeEmail(),
