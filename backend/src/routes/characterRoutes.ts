@@ -3,10 +3,11 @@ import {
   createCharacter,
   getUserCharacter,
 } from "../controllers/characterController";
+import { verifyToken } from "../utils/tokenManager";
 
 const characterRoutes = Router();
 
-characterRoutes.get("/user/:userId", getUserCharacter); //TODO: add middleware
-characterRoutes.post("/", createCharacter); //TODO: add middleware
+characterRoutes.get("/", verifyToken, getUserCharacter);
+characterRoutes.post("/", verifyToken, createCharacter); //TODO: Add validation for character creation payload.
 
 export default characterRoutes;

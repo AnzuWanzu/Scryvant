@@ -15,7 +15,7 @@ import {
   loginValidator,
   verifyOtpValidator,
   deleteUserValidator,
-} from "../utils/validator";
+} from "../utils/validators";
 import { requireAdmin, verifyToken } from "../utils/tokenManager";
 
 const userRoutes = Router();

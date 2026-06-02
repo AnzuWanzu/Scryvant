@@ -3,15 +3,17 @@ import { Request, Response } from "express";
 
 export const getUserCharacter = async (req: Request, res: Response) => {
   try {
-    const { userId } = req.params;
-    if (!userId) {
-      return res.status(400).json({ message: "Invalid user ID" });
+    const authUserId = res.locals.jwtData?.id;
+    if (!authUserId) {
+      return res
+        .status(401)
+        .json({ message: "Unauthorized. User session not found." });
     }
 
-    const characters = await Character.find({ userId });
+    const characters = await Character.find({ userId: authUserId });
 
     return res.status(200).json({
-      message: "Characters retrieved successfully from user",
+      message: "Characters retrieved successfully.",
       characters,
     });
   } catch (error) {
@@ -22,8 +24,13 @@ export const getUserCharacter = async (req: Request, res: Response) => {
 
 export const createCharacter = async (req: Request, res: Response) => {
   try {
+    const authUserId = res.locals.jwtData?.id;
+    if (!authUserId) {
+      return res
+        .status(401)
+        .json({ message: "Unauthorized. User session not found." });
+    }
     const {
-      userId,
       name,
       race,
       class: characterClass,
@@ -36,7 +43,6 @@ export const createCharacter = async (req: Request, res: Response) => {
     } = req.body;
 
     if (
-      !userId ||
       !name ||
       !race ||
       !characterClass ||
@@ -50,7 +56,7 @@ export const createCharacter = async (req: Request, res: Response) => {
     }
 
     const newCharacter = new Character({
-      userId,
+      userId: authUserId,
       name,
       race,
       class: characterClass,
@@ -64,7 +70,7 @@ export const createCharacter = async (req: Request, res: Response) => {
 
     const savedCharacter = await newCharacter.save();
 
-    res.status(201).json({
+    return res.status(201).json({
       message: "Character created successfully.",
       character: savedCharacter,
     });
