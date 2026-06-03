@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { beforeEach, describe, expect, jest, test } from "@jest/globals";
-import { validate, loginValidator } from "./validator";
+import { validate, loginValidator } from "../utils/validators";
 
 describe("Validator Middleware", () => {
   let req: Partial<Request>;
