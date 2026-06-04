@@ -22,6 +22,36 @@ export const getUserCharacter = async (req: Request, res: Response) => {
   }
 };
 
+export const getCharacterById = async (req: Request, res: Response) => {
+  try {
+    const authUserId = res.locals.jwtData?.id;
+    if (!authUserId) {
+      return res
+        .status(401)
+        .json({ message: "Unauthorized. User session not found." });
+    }
+
+    const id = req.params.id as string;
+
+    const character = await Character.findOne({
+      _id: id,
+      userId: authUserId,
+    });
+
+    if (!character) {
+      return res.status(404).json({ message: "Character not found." });
+    }
+
+    return res.status(200).json({
+      message: "Character sheet retrieved successfully.",
+      character,
+    });
+  } catch (error) {
+    console.error("Error in getCharacterById function: ", error);
+    return res.status(500).json({ message: "Failed to retrieve character" });
+  }
+};
+
 export const createCharacter = async (req: Request, res: Response) => {
   try {
     const authUserId = res.locals.jwtData?.id;

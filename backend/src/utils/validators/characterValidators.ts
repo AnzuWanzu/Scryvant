@@ -1,4 +1,4 @@
-import { body } from "express-validator";
+import { body, param } from "express-validator";
 
 export const createCharacterValidator = [
   // 1. Core String Fields & Sanitation
@@ -71,4 +71,12 @@ export const createCharacterValidator = [
       }
       return true;
     }),
+];
+
+export const idParamValidator = [
+  param("id")
+    .isMongoId()
+    .withMessage(
+      "Invalid character ID format. Must be a valid MongoDB ObjectId.",
+    ),
 ];
