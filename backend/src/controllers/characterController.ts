@@ -109,3 +109,69 @@ export const createCharacter = async (req: Request, res: Response) => {
     res.status(500).json({ message: "Failed to create character" });
   }
 };
+
+export const updateCharacterById = async (req: Request, res: Response) => {
+  try {
+    const authUserId = res.locals.jwtData?.id;
+    if (!authUserId) {
+      return res
+        .status(401)
+        .json({ message: "Unauthorized. User session not found." });
+    }
+
+    const id = req.params.id as string;
+
+    const {
+      name,
+      race,
+      class: characterClass,
+      background,
+      abilityScores,
+      hp,
+      hitDice,
+      armorClass,
+      speed,
+      level,
+      experiencePoints,
+      proficiencyBonus,
+    } = req.body;
+
+    const updatedCharacter = await Character.findOneAndUpdate(
+      { _id: id, userId: authUserId as string },
+      {
+        $set: {
+          name,
+          race,
+          class: characterClass,
+          background,
+          abilityScores,
+          hp,
+          hitDice,
+          armorClass,
+          speed,
+          level,
+          experiencePoints,
+          proficiencyBonus,
+        },
+      },
+      {
+        new: true,
+        runValidators: true,
+      },
+    );
+
+    if (!updatedCharacter) {
+      return res
+        .status(404)
+        .json({ message: "Character not found or unauthorized to update." });
+    }
+
+    return res.status(200).json({
+      message: "Character updated successfully.",
+      character: updatedCharacter,
+    });
+  } catch (error) {
+    console.error("Error in updateCharacterById function: ", error);
+    return res.status(500).json({ message: "Failed to update character" });
+  }
+};

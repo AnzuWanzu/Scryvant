@@ -3,10 +3,12 @@ import {
   createCharacter,
   getUserCharacter,
   getCharacterById,
+  updateCharacterById,
 } from "../controllers/characterController";
 import { validate } from "../utils/validators";
 import {
   createCharacterValidator,
+  updateCharacterValidator,
   idParamValidator,
 } from "../utils/validators/characterValidators";
 import { verifyToken } from "../utils/tokenManager";
@@ -25,6 +27,12 @@ characterRoutes.post(
   verifyToken,
   validate(createCharacterValidator),
   createCharacter,
+);
+characterRoutes.put(
+  "/:id",
+  verifyToken,
+  validate([...idParamValidator, ...updateCharacterValidator]),
+  updateCharacterById,
 );
 
 export default characterRoutes;
