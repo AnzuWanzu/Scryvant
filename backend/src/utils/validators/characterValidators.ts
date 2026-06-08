@@ -73,6 +73,34 @@ export const createCharacterValidator = [
     }),
 ];
 
+export const updateCharacterValidator = [
+  ...createCharacterValidator,
+  body("level")
+    .optional()
+    .isInt({ min: 1, max: 20 })
+    .withMessage("Level must be an integer between 1 and 20."),
+
+  body("experiencePoints")
+    .optional()
+    .isInt({ min: 0 })
+    .withMessage("Experience points cannot be negative."),
+
+  body("proficiencyBonus")
+    .optional()
+    .isInt({ min: 2, max: 6 })
+    .withMessage("Proficiency bonus must be an integer between 2 and 6."),
+
+  body("armorClass")
+    .optional()
+    .isInt({ min: 1, max: 40 })
+    .withMessage("Armor Class must be a valid integer."),
+
+  body("speed")
+    .optional()
+    .isInt({ min: 0, max: 150 })
+    .withMessage("Speed must be a valid integer."),
+];
+
 export const idParamValidator = [
   param("id")
     .isMongoId()
