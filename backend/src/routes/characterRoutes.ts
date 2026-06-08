@@ -4,6 +4,7 @@ import {
   getUserCharacter,
   getCharacterById,
   updateCharacterById,
+  deleteCharacterById,
 } from "../controllers/characterController";
 import { validate } from "../utils/validators";
 import {
@@ -34,5 +35,10 @@ characterRoutes.put(
   validate([...idParamValidator, ...updateCharacterValidator]),
   updateCharacterById,
 );
-
+characterRoutes.delete(
+  "/:id",
+  verifyToken,
+  validate(idParamValidator),
+  deleteCharacterById,
+);
 export default characterRoutes;

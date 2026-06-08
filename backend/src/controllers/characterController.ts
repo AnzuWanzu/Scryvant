@@ -175,3 +175,35 @@ export const updateCharacterById = async (req: Request, res: Response) => {
     return res.status(500).json({ message: "Failed to update character" });
   }
 };
+
+export const deleteCharacterById = async (req: Request, res: Response) => {
+  try {
+    const authUserId = res.locals.jwtData?.id;
+    if (!authUserId) {
+      return res
+        .status(401)
+        .json({ message: "Unauthorized. User session not found." });
+    }
+
+    const id = req.params.id as string;
+
+    const deletedCharacter = await Character.findOneAndDelete({
+      _id: id,
+      userId: authUserId,
+    });
+
+    if (!deletedCharacter) {
+      return res
+        .status(404)
+        .json({ message: "Character not found or unauthorized to delete." });
+    }
+
+    return res.status(200).json({
+      message: "Character deleted successfully.",
+      character: deletedCharacter,
+    });
+  } catch (error) {
+    console.error("Error in deleteCharacterById function: ", error);
+    return res.status(500).json({ message: "Failed to delete character" });
+  }
+};
