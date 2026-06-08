@@ -5,7 +5,7 @@ import {
   getCharacterById,
   updateCharacterById,
   deleteCharacterById,
-} from "../controllers/characterController";
+} from "../controllers/characterControllers";
 import { validate } from "../utils/validators";
 import {
   createCharacterValidator,
