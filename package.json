@@ -6,20 +6,22 @@
     "husky": "^9.1.7",
     "jest": "^30.4.2",
     "lint-staged": "^17.0.4",
+    "prettier": "^3.9.6",
     "ts-jest": "^29.4.10"
   },
   "scripts": {
     "prepare": "husky",
-    "test:backend": "npm run test --prefix backend"
+    "test:backend": "npm run test --prefix backend",
+    "check:boundaries": "node scripts/check-boundaries.cjs",
+    "format:check": "prettier --check frontend/src backend/src/modules backend/src/platform backend/src/contracts.ts",
+    "format": "prettier --write frontend/src backend/src/modules backend/src/platform backend/src/contracts.ts"
   },
   "lint-staged": {
-    "frontend/src/**/*.{ts,tsx,js,jsx}": [
-      "npm --prefix frontend run lint",
-      "npm --prefix frontend run format"
-    ],
     "backend/src/**/*.{ts,js}": [
-      "npm --prefix backend run lint",
-      "npm --prefix backend run format"
+      "npm --prefix backend exec -- eslint --config backend/eslint.config.mjs"
+    ],
+    "frontend/src/**/*.{ts,tsx}": [
+      "npm --prefix frontend exec -- eslint --config frontend/eslint.config.js"
     ]
   }
 }
