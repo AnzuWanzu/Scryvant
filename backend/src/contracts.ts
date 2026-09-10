@@ -73,6 +73,7 @@ export type Derived = {
   initiative: number;
   saves: Scores;
   skills: Record<string, number>;
+  spellLimits: { cantrips: number; prepared: number };
   spellAbility: Ability | null;
   spellAttack: number;
   spellDc: number;
@@ -122,6 +123,13 @@ export type RulesCatalog = {
   abilities: Ability[];
   skillAbilities: Record<string, Ability>;
   conditions: string[];
+  feats: {
+    id: string;
+    name: string;
+    category: string;
+    text: string;
+    page: number;
+  }[];
   classes: {
     id: string;
     name: string;

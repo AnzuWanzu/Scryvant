@@ -1,5 +1,11 @@
 import type { Ability } from "../../../contracts";
 import srd from "./srd.json";
+import progressionData from "./progression.json";
+export const feats = progressionData.feats;
+export const spellProgression: Record<
+  string,
+  { level: number; cantrips: number; prepared: number }[]
+> = progressionData.progression;
 export const abilities: Ability[] = [
   "strength",
   "dexterity",
@@ -489,23 +495,32 @@ export const spells = srd.spells;
 export const pages = srd.pages;
 export function classFeatures(id: string, level: number) {
   const rule = classes.find((c) => c.id === id)!;
-  const result: { name: string; level: number; page: number; text: string }[] =
-    [];
-  for (const p of pages.filter(
-    (p) => p.page >= rule.page && p.page <= rule.end,
-  )) {
-    const re =
-      /^Level (\d+): ([^\n]+)\n([\s\S]*?)(?=^Level \d+:|$(?![\s\S]))/gm;
-    for (const m of p.text.matchAll(re))
-      if (Number(m[1]) <= level)
-        result.push({
-          name: m[2]!,
-          level: Number(m[1]),
-          page: p.page,
-          text: m[3]!.slice(0, 5000),
-        });
-  }
-  return result;
+  const source = pages.map((p) => `\n[[PAGE:${p.page}]]\n${p.text}`).join("\n");
+  const begin = source.indexOf(`\n${rule.name}\nCore ${rule.name} Traits\n`);
+  const next = classes[classes.indexOf(rule) + 1];
+  const end = next
+    ? source.indexOf(`\n${next.name}\nCore ${next.name} Traits\n`, begin + 1)
+    : source.indexOf("\nCharacter Origins\n", begin);
+  const section = source.slice(begin, end > begin ? end : undefined);
+  const matches = [...section.matchAll(/^Level (\d+): ([^\n]+)\n/gm)];
+  return matches
+    .filter((m) => Number(m[1]) <= level)
+    .map((m) => {
+      const position = matches.indexOf(m);
+      const pageMarkers = [
+        ...source.slice(0, begin + m.index!).matchAll(/\[\[PAGE:(\d+)\]\]/g),
+      ];
+      const page = Number(pageMarkers.at(-1)?.[1] ?? rule.page);
+      const body = section
+        .slice(m.index! + m[0].length, matches[position + 1]?.index)
+        .replace(/\[\[PAGE:\d+\]\]/g, "");
+      return {
+        name: m[2]!,
+        level: Number(m[1]),
+        page,
+        text: body.slice(0, 8000),
+      };
+    });
 }
 export const catalog = {
   version: "5.2.1",
@@ -515,6 +530,7 @@ export const catalog = {
   equipment,
   spells,
   conditions,
+  feats,
   abilities,
   skillAbilities,
 };

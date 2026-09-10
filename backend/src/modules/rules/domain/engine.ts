@@ -15,6 +15,8 @@ import {
   skillAbilities,
   species,
   spells,
+  feats,
+  spellProgression,
 } from "./catalog";
 import { AppError } from "../../../platform/errors";
 export const zeroScores = (): Scores => ({
@@ -130,15 +132,32 @@ export function derive(c: Character): Derived {
       (a === "strength" || a === "constitution")
     )
       scores[a] += 4;
+    if (
+      cls.id === "monk" &&
+      c.level === 20 &&
+      (a === "dexterity" || a === "wisdom")
+    )
+      scores[a] = Math.min(25, scores[a] + 4);
     modifiers[a] = modifier(scores[a]);
   }
   const proficiency = 2 + Math.floor((c.level - 1) / 4);
+  const penalty = c.state.exhaustion * 2;
+  const aura =
+    cls.id === "paladin" &&
+    c.level >= 6 &&
+    !c.state.conditions.some((v) =>
+      ["Incapacitated", "Unconscious", "Stunned", "Paralyzed"].includes(v),
+    )
+      ? Math.max(1, modifiers.charisma)
+      : 0;
   for (const a of abilities)
     saves[a] =
       modifiers[a] +
       (cls.saves.includes(a) || (cls.id === "monk" && c.level >= 14)
         ? proficiency
-        : 0);
+        : 0) +
+      aura -
+      penalty;
   const skills = Object.fromEntries(
     Object.entries(skillAbilities).map(([s, a]) => [
       s,
@@ -147,7 +166,8 @@ export function derive(c: Character): Derived {
           ? proficiency
           : cls.id === "bard" && c.level >= 2
             ? Math.floor(proficiency / 2)
-            : 0),
+            : 0) -
+        penalty,
     ]),
   );
   const maxHp =
@@ -265,7 +285,8 @@ export function derive(c: Character): Derived {
           : modifiers.strength;
       return {
         name: w.name,
-        bonus: m + (w.category === "simple" || martial ? proficiency : 0),
+        bonus:
+          m + (w.category === "simple" || martial ? proficiency : 0) - penalty,
         damage: `${w.damage} ${m >= 0 ? "+" : "−"} ${Math.abs(m)}`,
       };
     });
@@ -276,20 +297,47 @@ export function derive(c: Character): Derived {
     maxHp,
     armorClass,
     speed: Math.max(0, speed),
-    initiative: modifiers.dexterity + (bg.id === "criminal" ? proficiency : 0),
+    initiative:
+      modifiers.dexterity + (bg.id === "criminal" ? proficiency : 0) - penalty,
     saves,
     skills,
+    spellLimits: spellProgression[cls.id]?.[c.level - 1] ?? {
+      cantrips: 0,
+      prepared: 0,
+    },
     spellAbility: cls.casting,
-    spellAttack: spellMod + proficiency,
+    spellAttack: spellMod + proficiency - penalty,
     spellDc: 8 + proficiency + spellMod,
     slots: slotMaximums(cls.id, c.level),
     resources,
-    features: classFeatures(cls.id, c.level),
+    features: [
+      ...classFeatures(cls.id, c.level),
+      ...c.advancements
+        .filter((a) => a.feat)
+        .map((a) => {
+          const f = feats.find((f) => f.id === a.feat)!;
+          return { name: f.name, level: a.level, page: f.page, text: f.text };
+        }),
+    ],
     attacks,
   };
 }
 function validateSpells(c: Character) {
   const cls = classes.find((v) => v.id === c.choices.classId)!;
+  const limits = spellProgression[cls.id]?.[c.level - 1] ?? {
+    cantrips: 0,
+    prepared: 0,
+  };
+  const selected = c.choices.spells.map((id) =>
+    spells.find((s) => s.id === id),
+  );
+  if (
+    selected.filter((s) => s?.level === 0).length > limits.cantrips ||
+    selected.filter((s) => s && s.level > 0).length > limits.prepared
+  )
+    fail(
+      `Your class allows ${limits.cantrips} cantrips and ${limits.prepared} prepared spells at this level.`,
+    );
   const max = slotMaximums(cls.id, c.level).findLastIndex((n) => n > 0) + 1;
   if (new Set(c.choices.spells).size !== c.choices.spells.length)
     fail("A spell may only be selected once.");
@@ -522,20 +570,56 @@ export function applyCommand(
         ...(cls.id === "rogue" ? [10] : []),
       ].includes(a.level);
       const total = abilities.reduce((n, k) => n + a.boosts[k], 0);
-      if (asi) {
+      if (asi || a.level === 19) {
+        const feat = feats.find((f) => f.id === a.feat);
         if (
-          total !== 2 ||
-          a.feat !== "ability-score-improvement" ||
+          !feat ||
+          !(
+            feat.category === "General" ||
+            (a.level === 19 && feat.category === "Epic Boon")
+          )
+        )
+          fail("Choose an eligible advancement feat.");
+        const improvement = a.feat === "ability-score-improvement";
+        const cap = feat!.category === "Epic Boon" ? 30 : 20;
+        if (
+          total !== (improvement ? 2 : 1) ||
           abilities.some(
             (k) =>
               a.boosts[k] < 0 ||
-              a.boosts[k] > 2 ||
-              d.scores[k] + a.boosts[k] > 20,
+              a.boosts[k] > (improvement ? 2 : 1) ||
+              d.scores[k] + a.boosts[k] > cap,
           )
         )
-          fail("Assign two Ability Score Improvement points, maximum 20.");
-      } else if (total !== 0 || a.feat !== "")
-        fail("This level does not grant an Ability Score Improvement.");
+          fail(
+            `Assign ${improvement ? 2 : 1} ability points, with a maximum score of ${cap}.`,
+          );
+        if (!improvement && c.advancements.some((v) => v.feat === a.feat))
+          fail("This feat cannot be selected twice.");
+        if (
+          a.feat === "grappler" &&
+          (Math.max(d.scores.strength, d.scores.dexterity) < 13 ||
+            a.boosts.strength + a.boosts.dexterity !== 1)
+        )
+          fail(
+            "Grappler requires Strength or Dexterity 13 and boosts one of those abilities.",
+          );
+        if (
+          a.feat === "boon-of-irresistible-offense" &&
+          a.boosts.strength + a.boosts.dexterity !== 1
+        )
+          fail("Choose Strength or Dexterity for this boon.");
+        if (
+          a.feat === "boon-of-spell-recall" &&
+          (!cls.casting ||
+            a.boosts.intelligence + a.boosts.wisdom + a.boosts.charisma !== 1)
+        )
+          fail(
+            "Spell Recall requires spellcasting and a mental ability increase.",
+          );
+      } else if (total !== 0 || a.feat !== "") {
+        fail("This level does not grant a feat or ability increase.");
+      }
       c.level++;
       c.advancements.push(a);
       c.state.hp += derive(c).maxHp - d.maxHp;

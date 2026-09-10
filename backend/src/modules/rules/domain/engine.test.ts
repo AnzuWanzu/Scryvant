@@ -8,32 +8,8 @@ import {
   zeroScores,
 } from "./engine";
 import { classes, spells } from "./catalog";
-import type { CharacterChoices } from "../../../contracts";
-export function fixture(classId = "wizard"): CharacterChoices {
-  const cls = classes.find((c) => c.id === classId)!;
-  return {
-    name: "Aster",
-    classId,
-    speciesId: "elf",
-    backgroundId: "sage",
-    method: "standard",
-    baseScores: {
-      strength: 8,
-      dexterity: 14,
-      constitution: 13,
-      intelligence: 15,
-      wisdom: 12,
-      charisma: 10,
-    },
-    boosts: { ...zeroScores(), intelligence: 2, constitution: 1 },
-    skills: cls.skills
-      .filter((v) => !["Arcana", "History"].includes(v))
-      .slice(0, cls.skillCount),
-    spells: [],
-    narrative: "",
-    appearance: { palette: "jade", accessory: "staff" },
-  };
-}
+import { fixture } from "../../../testing/fixtures";
+
 describe("SRD deterministic character operations", () => {
   for (const cls of classes)
     test(`${cls.name}: creation and progression across levels 1–20`, () => {
@@ -60,6 +36,7 @@ describe("SRD deterministic character operations", () => {
         ].includes(level + 1);
         const boosts = zeroScores();
         if (asi) boosts.strength = 2;
+        if (level + 1 === 19) boosts.charisma = 1;
         c = applyCommand(
           c,
           {
@@ -67,7 +44,11 @@ describe("SRD deterministic character operations", () => {
             advancement: {
               level: level + 1,
               boosts,
-              feat: asi ? "ability-score-improvement" : "",
+              feat: asi
+                ? "ability-score-improvement"
+                : level + 1 === 19
+                  ? "boon-of-combat-prowess"
+                  : "",
               hp: cls.die / 2 + 1,
             },
           },
