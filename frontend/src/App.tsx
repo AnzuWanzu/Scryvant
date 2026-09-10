@@ -37,19 +37,21 @@ import { api, ApiError } from "./lib/api";
 import { demo } from "./lib/demo";
 import type {
   Ability,
+  Advancement,
   Catalog,
   CharacterChoices,
   CharacterCommand,
   CharacterView,
   LegacyCharacter,
   Proposal,
-  Scores,
   UserView,
 } from "./lib/types";
 import { Auth } from "./components/Auth";
 import { Creator } from "./components/Creator";
 import { Modal } from "./components/Modal";
+import { LevelUp } from "./components/LevelUp";
 import { ProposalPreview } from "./components/ProposalPreview";
+import { PlayStatus } from "./components/PlayStatus";
 import "./App.css";
 const Miniature = lazy(() => import("./components/Miniature"));
 const sign = (n: number) => `${n >= 0 ? "+" : ""}${n}`;
@@ -188,7 +190,7 @@ function App() {
       setSaving(false);
     }
   }
-  async function create(v: CharacterChoices) {
+  async function create(v: CharacterChoices, advancements: Advancement[] = []) {
     if (!user) {
       const { createPreview } = await import("./lib/preview");
       setCharacter(createPreview(v));
@@ -199,7 +201,7 @@ function App() {
     const sheet = await api<CharacterView>(
       legacyId ? `/characters/${legacyId}/complete` : "/characters",
       "POST",
-      v,
+      legacyId ? { choices: v, advancements, acknowledgeChanges: true } : v,
     );
     setCharacter(sheet);
     setLegacyId(null);
@@ -760,6 +762,10 @@ function App() {
                     <h2>Your spellbook</h2>
                     <span className="pill">SAVE DC {d.spellDc}</span>
                   </div>
+                  <p className="muted">
+                    Up to {d.spellLimits.cantrips} class cantrips and{" "}
+                    {d.spellLimits.prepared} prepared spells.
+                  </p>
                   <div className="slot-grid">
                     {d.slots.map(
                       (max, i) =>
@@ -1023,6 +1029,7 @@ function App() {
                 />
               )}
             </section>
+            <PlayStatus character={c} busy={saving} onCommand={command} />
             <section className="conditions-bar">
               <span>
                 <Shield size={14} />
@@ -1268,6 +1275,10 @@ function App() {
       )}
       {creator && catalog && (
         <Creator
+          legacy={
+            list.find((v) => v.id === legacyId && "needsCompletion" in v) as
+              LegacyCharacter | undefined
+          }
           catalog={catalog}
           onClose={() => {
             setCreator(false);
@@ -1436,6 +1447,7 @@ function App() {
       )}
       {levelUp && (
         <LevelUp
+          feats={catalog?.feats ?? []}
           character={c}
           onClose={() => setLevelUp(false)}
           onCommand={command}
@@ -1525,95 +1537,6 @@ function Journal({
         <Check size={14} />
       </button>
     </div>
-  );
-}
-function LevelUp({
-  character: c,
-  onClose,
-  onCommand,
-  die,
-}: {
-  character: CharacterView;
-  onClose: () => void;
-  onCommand: (c: CharacterCommand) => Promise<void>;
-  die: number;
-}) {
-  const next = c.level + 1;
-  const asi = [
-    4,
-    8,
-    12,
-    16,
-    ...(c.choices.classId === "fighter" ? [6, 14] : []),
-    ...(c.choices.classId === "rogue" ? [10] : []),
-  ].includes(next);
-  const [hp, setHp] = useState(die / 2 + 1);
-  const [boosts, setBoosts] = useState<Scores>({
-    strength: 0,
-    dexterity: 0,
-    constitution: 0,
-    intelligence: 0,
-    wisdom: 0,
-    charisma: 0,
-  });
-  return (
-    <Modal title={`Chapter ${next}. Your legend grows.`} onClose={onClose}>
-      <label>
-        Hit Point gain (before Constitution modifier)
-        <input
-          type="number"
-          min={1}
-          max={die}
-          value={hp}
-          onChange={(e) => setHp(Number(e.target.value))}
-        />
-        <small>
-          Use the fixed value {die / 2 + 1}, or record a d{die} roll.
-        </small>
-      </label>
-      {asi && (
-        <>
-          <p className="muted">
-            Distribute two Ability Score Improvement points, up to a score of
-            20.
-          </p>
-          <div className="ability-editor">
-            {abilityNames.map((a) => (
-              <label key={a}>
-                {a.slice(0, 3)}
-                <input
-                  type="number"
-                  min={0}
-                  max={2}
-                  value={boosts[a]}
-                  onChange={(e) =>
-                    setBoosts({ ...boosts, [a]: Number(e.target.value) })
-                  }
-                />
-              </label>
-            ))}
-          </div>
-        </>
-      )}
-      <button
-        className="button primary"
-        onClick={() => {
-          void onCommand({
-            type: "level-up",
-            advancement: {
-              level: next,
-              boosts,
-              feat: asi ? "ability-score-improvement" : "",
-              hp,
-            },
-          });
-          onClose();
-        }}
-      >
-        Advance to level {next}
-        <ArrowUpRight size={16} />
-      </button>
-    </Modal>
   );
 }
 export default App;

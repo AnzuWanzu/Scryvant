@@ -1,5 +1,6 @@
 export type {
   CharacterView,
+  Advancement,
   CharacterChoices,
   CharacterCommand,
   LegacyCharacter,

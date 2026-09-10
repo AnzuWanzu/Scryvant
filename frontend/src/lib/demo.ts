@@ -124,6 +124,7 @@ export const demo: CharacterView = {
       Stealth: 2,
       Survival: 1,
     },
+    spellLimits: { cantrips: 3, prepared: 6 },
     spellAbility: "intelligence",
     spellAttack: 5,
     spellDc: 13,

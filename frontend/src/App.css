@@ -2618,3 +2618,29 @@ h1 {
     font-size: 0.6rem !important;
   }
 }
+
+.play-status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: start;
+  gap: 1.25rem 2rem;
+  padding: 1.25rem;
+  border-top: 1px solid var(--border);
+  font-size: 0.9375rem;
+}
+
+.play-status label,
+.play-status > div {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.play-status p {
+  margin: 0;
+}
+
+.play-status select,
+.play-status input {
+  min-height: 2.75rem;
+  max-width: 12rem;
+}

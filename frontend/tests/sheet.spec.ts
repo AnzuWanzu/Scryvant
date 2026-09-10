@@ -151,3 +151,20 @@ test("reading text scales with the viewport and stays readable on mobile", async
     .evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
   expect(large).toBeGreaterThan(small);
 });
+
+test("tracks exhaustion and recorded death saves during manual play", async ({
+  page,
+}) => {
+  await page.getByLabel("Exhaustion level").selectOption("2");
+  await expect(page.getByLabel("Exhaustion level")).toHaveValue("2");
+  await page.getByLabel("Damage or healing amount").fill("20");
+  await page.getByRole("button", { name: "Damage", exact: true }).click();
+  await expect(page.locator(".hp-value strong")).toHaveText("0");
+  await page.getByLabel("Death save roll").fill("1");
+  await page.getByRole("button", { name: "Record death save" }).click();
+  await expect(page.getByText("0 successes · 2 failures")).toBeVisible();
+  await page.getByLabel("Death save roll").fill("20");
+  await page.getByRole("button", { name: "Record death save" }).click();
+  await expect(page.locator(".hp-value strong")).toHaveText("1");
+  await expect(page.getByLabel("Death save roll")).toHaveCount(0);
+});

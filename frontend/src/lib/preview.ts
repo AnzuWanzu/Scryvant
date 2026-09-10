@@ -1,4 +1,8 @@
 import {
+  commandSchema,
+  choicesSchema,
+} from "../../../backend/src/modules/characters/application/schemas";
+import {
   applyCommand,
   createSheet,
   derive,
@@ -20,7 +24,7 @@ export function updatePreview(
   old: CharacterView,
   command: CharacterCommand,
 ): CharacterView {
-  const c = applyCommand(old, command, roll);
+  const c = applyCommand(old, commandSchema.parse(command), roll);
   c.revision++;
   c.updatedAt = new Date().toISOString();
   c.history = [
@@ -33,7 +37,7 @@ export function createPreview(choices: CharacterChoices): CharacterView {
   const c = createSheet(
     "preview",
     "preview",
-    choices,
+    choicesSchema.parse(choices),
     new Date().toISOString(),
   );
   return { ...c, derived: derive(c) };

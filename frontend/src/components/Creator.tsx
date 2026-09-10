@@ -1,7 +1,15 @@
 import { useState } from "react";
 import { ArrowLeft, ArrowRight, Check, Sparkles } from "lucide-react";
 import { Modal } from "./Modal";
-import type { Catalog, CharacterChoices, Scores, Ability } from "../lib/types";
+import { LegacyReconciliation } from "./LegacyReconciliation";
+import type {
+  Catalog,
+  CharacterChoices,
+  Scores,
+  Ability,
+  LegacyCharacter,
+  Advancement,
+} from "../lib/types";
 const zero: Scores = {
   strength: 0,
   dexterity: 0,
@@ -34,12 +42,26 @@ export function Creator({
   catalog,
   onClose,
   onCreate,
+  legacy,
 }: {
   catalog: Catalog;
   onClose: () => void;
-  onCreate: (v: CharacterChoices) => Promise<void>;
+  onCreate: (v: CharacterChoices, advancements: Advancement[]) => Promise<void>;
+  legacy?: LegacyCharacter | undefined;
 }) {
-  const [value, setValue] = useState(initial);
+  const [value, setValue] = useState({ ...initial, name: legacy?.name ?? "" });
+  const [acknowledged, setAcknowledged] = useState(false);
+  const [advancements, setAdvancements] = useState<Advancement[]>(
+    Array.from(
+      {
+        length: Math.max(
+          0,
+          Math.min(19, Number(legacy?.legacy.level ?? 1) - 1),
+        ),
+      },
+      (_, i) => ({ level: i + 2, boosts: { ...zero }, feat: "", hp: 4 }),
+    ),
+  );
   const [step, setStep] = useState(0);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -56,7 +78,7 @@ export function Creator({
     setBusy(true);
     setError("");
     try {
-      await onCreate(value);
+      await onCreate(value, advancements);
       onClose();
     } catch (e) {
       setError((e as Error).message);
@@ -351,6 +373,17 @@ export function Creator({
               {value.name || "Your character"} · Level 1 {cls.name} ·{" "}
               {value.speciesId} · {bg.name}
             </p>
+            {legacy && (
+              <LegacyReconciliation
+                legacy={legacy}
+                catalog={catalog}
+                classId={value.classId}
+                advancements={advancements}
+                onChange={setAdvancements}
+                acknowledged={acknowledged}
+                onAcknowledge={setAcknowledged}
+              />
+            )}
           </>
         )}
       </div>
@@ -375,7 +408,7 @@ export function Creator({
         ) : (
           <button
             className="button primary"
-            disabled={busy || !value.name.trim()}
+            disabled={busy || !value.name.trim() || (!!legacy && !acknowledged)}
             onClick={finish}
           >
             {busy ? "Writing your first chapter…" : "Create character"}
