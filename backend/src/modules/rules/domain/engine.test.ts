@@ -94,6 +94,32 @@ describe("SRD deterministic character operations", () => {
       applyCommand(c, { type: "rest", kind: "short", hitDice: 1 }, () => 6),
     ).toThrow("Hit Dice");
   });
+  test("background equipment supports the SRD package or 50 GP choice", () => {
+    const packaged = createSheet("c", "u", fixture(), "now");
+    expect(packaged.state.gold).toBe(8);
+    expect(packaged.state.inventory).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: "quarterstaff", quantity: 1 }),
+        expect.objectContaining({ id: "parchment", quantity: 8 }),
+      ]),
+    );
+    const gold = createSheet(
+      "c",
+      "u",
+      { ...fixture(), startingEquipment: "gold" },
+      "now",
+    );
+    expect(gold.state).toMatchObject({ inventory: [], gold: 50 });
+  });
+  test("Goliaths use their 35-foot species speed", () => {
+    const c = createSheet(
+      "c",
+      "u",
+      { ...fixture(), speciesId: "goliath" },
+      "now",
+    );
+    expect(derive(c).speed).toBe(35);
+  });
   test("slots follow full, half, and pact progression", () => {
     expect(slotMaximums("wizard", 20)).toEqual([4, 3, 3, 3, 3, 2, 2, 1, 1]);
     expect(slotMaximums("paladin", 1)[0]).toBe(2);

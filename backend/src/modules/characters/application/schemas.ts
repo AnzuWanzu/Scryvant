@@ -22,6 +22,7 @@ export const choicesSchema = z
     classId: z.string().max(30),
     speciesId: z.string().max(30),
     backgroundId: z.string().max(30),
+    startingEquipment: z.enum(["package", "gold"]).default("package"),
     method: z.enum(["standard", "point-buy", "rolled"]),
     baseScores: scores,
     boosts: scores,

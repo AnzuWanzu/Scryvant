@@ -313,7 +313,7 @@ export const species = [
 ].map((name) => ({
   id: name.toLowerCase(),
   name,
-  speed: name === "goliath" ? 35 : 30,
+  speed: name === "Goliath" ? 35 : 30,
   page: 83,
 }));
 export const backgrounds = [
@@ -323,6 +323,14 @@ export const backgrounds = [
     abilities: ["intelligence", "wisdom", "charisma"],
     skills: ["Insight", "Religion"],
     feat: "Magic Initiate (Cleric)",
+    equipment: [
+      { id: "calligraphers-supplies", quantity: 1, equipped: false },
+      { id: "book", quantity: 1, equipped: false },
+      { id: "holy-symbol", quantity: 1, equipped: false },
+      { id: "parchment", quantity: 10, equipped: false },
+      { id: "robe", quantity: 1, equipped: false },
+    ],
+    gold: 8,
   },
   {
     id: "criminal",
@@ -330,6 +338,14 @@ export const backgrounds = [
     abilities: ["dexterity", "constitution", "intelligence"],
     skills: ["Sleight of Hand", "Stealth"],
     feat: "Alert",
+    equipment: [
+      { id: "dagger", quantity: 2, equipped: false },
+      { id: "thieves-tools", quantity: 1, equipped: false },
+      { id: "crowbar", quantity: 1, equipped: false },
+      { id: "pouch", quantity: 2, equipped: false },
+      { id: "travelers-clothes", quantity: 1, equipped: false },
+    ],
+    gold: 16,
   },
   {
     id: "sage",
@@ -337,6 +353,14 @@ export const backgrounds = [
     abilities: ["constitution", "intelligence", "wisdom"],
     skills: ["Arcana", "History"],
     feat: "Magic Initiate (Wizard)",
+    equipment: [
+      { id: "quarterstaff", quantity: 1, equipped: false },
+      { id: "calligraphers-supplies", quantity: 1, equipped: false },
+      { id: "book", quantity: 1, equipped: false },
+      { id: "parchment", quantity: 8, equipped: false },
+      { id: "robe", quantity: 1, equipped: false },
+    ],
+    gold: 8,
   },
   {
     id: "soldier",
@@ -344,6 +368,16 @@ export const backgrounds = [
     abilities: ["strength", "dexterity", "constitution"],
     skills: ["Athletics", "Intimidation"],
     feat: "Savage Attacker",
+    equipment: [
+      { id: "spear", quantity: 1, equipped: false },
+      { id: "shortbow", quantity: 1, equipped: false },
+      { id: "arrow", quantity: 20, equipped: false },
+      { id: "gaming-set", quantity: 1, equipped: false },
+      { id: "healers-kit", quantity: 1, equipped: false },
+      { id: "quiver", quantity: 1, equipped: false },
+      { id: "travelers-clothes", quantity: 1, equipped: false },
+    ],
+    gold: 14,
   },
 ];
 export const conditions = [
@@ -479,6 +513,18 @@ export const equipment: ItemRule[] = [
     "Holy Symbol",
     "Druidic Focus",
     "Potion of Healing",
+    "Calligraphers Supplies",
+    "Book",
+    "Parchment",
+    "Robe",
+    "Thieves Tools",
+    "Crowbar",
+    "Pouch",
+    "Travelers Clothes",
+    "Arrow",
+    "Gaming Set",
+    "Healers Kit",
+    "Quiver",
   ].map((name) => ({
     id: name.toLowerCase().replaceAll(" ", "-"),
     name,

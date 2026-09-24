@@ -8,6 +8,7 @@ export function fixture(classId = "wizard"): CharacterChoices {
     classId,
     speciesId: "elf",
     backgroundId: "sage",
+    startingEquipment: "package",
     method: "standard",
     baseScores: {
       strength: 8,

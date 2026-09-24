@@ -16,6 +16,7 @@ export type CharacterChoices = {
   classId: string;
   speciesId: string;
   backgroundId: string;
+  startingEquipment?: "package" | "gold";
   method: "standard" | "point-buy" | "rolled";
   baseScores: Scores;
   boosts: Scores;
@@ -151,6 +152,8 @@ export type RulesCatalog = {
     abilities: string[];
     skills: string[];
     feat: string;
+    equipment: InventoryEntry[];
+    gold: number;
   }[];
   equipment: {
     id: string;

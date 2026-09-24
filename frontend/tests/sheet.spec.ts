@@ -133,6 +133,9 @@ test("creates a temporary character through the guided flow", async ({
     page.getByRole("heading", { name: "Lyra Starfall" }),
   ).toBeVisible();
   await expect(page.locator(".hp-value strong")).toHaveText("8");
+  await page.getByRole("button", { name: "Inventory", exact: true }).click();
+  await expect(page.getByText("Quarterstaff", { exact: true })).toBeVisible();
+  await expect(page.getByText("8 GP")).toBeVisible();
 });
 
 test("reading text scales with the viewport and stays readable on mobile", async ({

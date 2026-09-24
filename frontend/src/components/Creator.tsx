@@ -23,6 +23,7 @@ const initial: CharacterChoices = {
   classId: "wizard",
   speciesId: "elf",
   backgroundId: "sage",
+  startingEquipment: "package",
   method: "standard",
   baseScores: {
     strength: 8,
@@ -189,6 +190,33 @@ export function Creator({
                 </select>
                 <small>
                   {bg.feat} · {bg.skills.join(", ")}
+                </small>
+              </label>
+              <label>
+                Background equipment
+                <select
+                  value={value.startingEquipment ?? "package"}
+                  onChange={(e) =>
+                    change(
+                      "startingEquipment",
+                      e.target.value as "package" | "gold",
+                    )
+                  }
+                >
+                  <option value="package">
+                    Equipment package + {bg.gold} GP
+                  </option>
+                  <option value="gold">50 GP to choose your own gear</option>
+                </select>
+                <small>
+                  {value.startingEquipment === "gold"
+                    ? "Begin with an empty pack and 50 GP."
+                    : bg.equipment
+                        .map(
+                          (item) =>
+                            `${item.quantity > 1 ? `${item.quantity}× ` : ""}${catalog.equipment.find((entry) => entry.id === item.id)?.name ?? item.id}`,
+                        )
+                        .join(", ")}
                 </small>
               </label>
             </div>

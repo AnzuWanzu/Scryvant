@@ -12,6 +12,7 @@ export const demo: CharacterView = {
     classId: "wizard",
     speciesId: "elf",
     backgroundId: "sage",
+    startingEquipment: "package",
     method: "standard",
     baseScores: {
       strength: 8,

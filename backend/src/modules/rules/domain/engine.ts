@@ -372,8 +372,20 @@ export function createSheet(
       exhaustion: 0,
       deathSaves: { success: 0, failure: 0 },
       concentration: null,
-      inventory: [],
-      gold: 0,
+      inventory:
+        choices.startingEquipment === "gold"
+          ? []
+          : structuredClone(
+              backgrounds.find(
+                (background) => background.id === choices.backgroundId,
+              )!.equipment,
+            ),
+      gold:
+        choices.startingEquipment === "gold"
+          ? 50
+          : backgrounds.find(
+              (background) => background.id === choices.backgroundId,
+            )!.gold,
       notes: "",
     },
     history: [],
