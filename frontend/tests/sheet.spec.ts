@@ -168,3 +168,15 @@ test("tracks exhaustion and recorded death saves during manual play", async ({
   await expect(page.locator(".hp-value strong")).toHaveText("1");
   await expect(page.getByLabel("Death save roll")).toHaveCount(0);
 });
+
+test("edits quantities and coin before saving inventory", async ({ page }) => {
+  await page.getByRole("button", { name: "Inventory", exact: true }).click();
+  await page.getByLabel("Add equipment").selectOption({ label: "Longsword" });
+  await page.getByLabel("Gold pieces").fill("42");
+  await page.getByLabel("Longsword quantity").fill("2");
+  await expect(page.getByText("Inventory has unsaved changes.")).toBeVisible();
+  await page.getByRole("button", { name: "Save inventory" }).click();
+  await expect(page.getByText("42 GP")).toBeVisible();
+  await expect(page.getByLabel("Longsword quantity")).toHaveValue("2");
+  await expect(page.getByText("Inventory has unsaved changes.")).toHaveCount(0);
+});

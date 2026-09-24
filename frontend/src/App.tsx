@@ -52,6 +52,7 @@ import { Modal } from "./components/Modal";
 import { LevelUp } from "./components/LevelUp";
 import { ProposalPreview } from "./components/ProposalPreview";
 import { PlayStatus } from "./components/PlayStatus";
+import { Inventory } from "./components/Inventory";
 import "./App.css";
 const Miniature = lazy(() => import("./components/Miniature"));
 const sign = (n: number) => `${n >= 0 ? "+" : ""}${n}`;
@@ -98,6 +99,7 @@ function App() {
   const [thinking, setThinking] = useState(false);
   const [serverReady, setServerReady] = useState(false);
   const [legacyId, setLegacyId] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const preview = character.id === "preview";
   const c = character,
     d = c.derived;
@@ -252,6 +254,24 @@ function App() {
       setStatus("Suggestion applied");
     } catch (e) {
       setError((e as Error).message);
+    } finally {
+      setSaving(false);
+    }
+  }
+  async function deleteCurrent() {
+    if (preview || !user) return;
+    setSaving(true);
+    setError("");
+    try {
+      await api(`/characters/${c.id}`, "DELETE", { revision: c.revision });
+      await loadList();
+      setCharacter(demo);
+      setConfirmDelete(false);
+      setSettings(false);
+      setStatus("Character deleted");
+    } catch (e) {
+      setError((e as Error).message);
+      setStatus("Character not deleted");
     } finally {
       setSaving(false);
     }
@@ -897,96 +917,13 @@ function App() {
                 </>
               )}
               {tab === "Inventory" && (
-                <>
-                  <div className="section-title">
-                    <h2>Tools of the journey</h2>
-                    <span className="pill gold-text">{c.state.gold} GP</span>
-                  </div>
-                  {c.state.inventory.map((i) => (
-                    <div className="inventory-row" key={i.id}>
-                      <Backpack size={19} />
-                      <span>
-                        <strong>
-                          {catalog?.equipment.find((e) => e.id === i.id)
-                            ?.name ?? title(i.id.replaceAll("-", " "))}
-                        </strong>
-                        <small>Quantity {i.quantity}</small>
-                      </span>
-                      <button
-                        className={`button small ${i.equipped ? "selected" : ""}`}
-                        disabled={saving}
-                        onClick={() =>
-                          void command({
-                            type: "inventory",
-                            items: c.state.inventory.map((v) =>
-                              v.id === i.id
-                                ? { ...v, equipped: !v.equipped }
-                                : v,
-                            ),
-                            gold: c.state.gold,
-                          })
-                        }
-                      >
-                        {i.equipped ? (
-                          <>
-                            <Check size={13} />
-                            Equipped
-                          </>
-                        ) : (
-                          "Equip"
-                        )}
-                      </button>
-                      <button
-                        className="icon-button"
-                        aria-label={`Remove ${i.id}`}
-                        onClick={() =>
-                          void command({
-                            type: "inventory",
-                            items: c.state.inventory.filter(
-                              (v) => v.id !== i.id,
-                            ),
-                            gold: c.state.gold,
-                          })
-                        }
-                      >
-                        <X size={14} />
-                      </button>
-                    </div>
-                  ))}
-                  <label className="add-equipment">
-                    Add equipment
-                    <select
-                      aria-label="Add equipment"
-                      value=""
-                      onChange={(e) => {
-                        if (e.target.value)
-                          void command({
-                            type: "inventory",
-                            items: [
-                              ...c.state.inventory,
-                              {
-                                id: e.target.value,
-                                quantity: 1,
-                                equipped: false,
-                              },
-                            ],
-                            gold: c.state.gold,
-                          });
-                      }}
-                    >
-                      <option value="">Choose from the compendium…</option>
-                      {catalog?.equipment
-                        .filter(
-                          (e) => !c.state.inventory.some((i) => i.id === e.id),
-                        )
-                        .map((e) => (
-                          <option key={e.id} value={e.id}>
-                            {e.name}
-                          </option>
-                        ))}
-                    </select>
-                  </label>
-                </>
+                <Inventory
+                  key={`${c.id}-${c.revision}`}
+                  character={c}
+                  catalog={catalog}
+                  busy={saving}
+                  onCommand={command}
+                />
               )}
               {tab === "Features" && (
                 <>
@@ -1401,6 +1338,41 @@ function App() {
               <option value="bow">Longbow</option>
             </select>
           </label>
+          {!preview && user && (
+            <div className="danger-zone">
+              <strong>Retire this character</strong>
+              <p>Delete this sheet and its saved play history permanently.</p>
+              <button
+                className="button danger"
+                onClick={() => setConfirmDelete(true)}
+              >
+                Delete character
+              </button>
+            </div>
+          )}
+        </Modal>
+      )}
+      {confirmDelete && (
+        <Modal
+          title={`Retire ${c.choices.name}?`}
+          onClose={() => setConfirmDelete(false)}
+        >
+          <p className="muted">
+            This permanently removes the character sheet and its history. This
+            action cannot be undone.
+          </p>
+          <div className="modal-actions">
+            <button className="button" onClick={() => setConfirmDelete(false)}>
+              Keep character
+            </button>
+            <button
+              className="button danger"
+              disabled={saving}
+              onClick={() => void deleteCurrent()}
+            >
+              Delete permanently
+            </button>
+          </div>
         </Modal>
       )}
       {rest && (

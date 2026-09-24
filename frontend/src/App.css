@@ -1658,6 +1658,68 @@ h1 {
   font-size: 0.85rem;
   color: #91a677;
 }
+
+.inventory-ledger {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--border);
+  background: rgba(178, 139, 76, 0.05);
+}
+
+.inventory-ledger label,
+.quantity-field {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.inventory-ledger label > span {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.inventory-ledger input,
+.quantity-field input {
+  width: 7rem;
+}
+
+.quantity-field input {
+  width: 4.5rem;
+  min-height: 2.5rem;
+}
+
+.inventory-unsaved {
+  color: var(--gold);
+  font-size: 0.875rem;
+}
+
+.danger-zone {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  border: 1px solid rgba(183, 78, 66, 0.55);
+  background: rgba(92, 25, 22, 0.18);
+}
+
+.danger-zone p {
+  margin: 0.35rem 0 1rem;
+}
+
+.button.danger {
+  border-color: #a95349;
+  background: #722f2a;
+  color: #fff5eb;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
 .selected {
   border-color: #728954;
   background: #2c3e22;

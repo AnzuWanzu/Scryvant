@@ -3,6 +3,7 @@ export type {
   Advancement,
   CharacterChoices,
   CharacterCommand,
+  InventoryEntry,
   LegacyCharacter,
   Proposal,
   Scores,
