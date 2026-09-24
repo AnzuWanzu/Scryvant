@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    services:
+      mongo:
+        image: mongo:8
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --quiet --eval 'quit(db.adminCommand({ ping: 1 }).ok ? 0 : 1)'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            backend/package-lock.json
+            frontend/package-lock.json
+      - run: npm ci
+      - run: npm ci --prefix backend
+      - run: npm ci --prefix frontend
+      - run: npm run check:boundaries
+      - run: npm run format:check
+      - run: npm run lint --prefix backend -- --max-warnings=4
+      - run: npm run lint --prefix frontend
+      - run: npm run typecheck --prefix backend
+      - run: npm test --prefix backend -- --runInBand
+        env:
+          TEST_MONGODB_URI: mongodb://127.0.0.1:27017
+      - run: npm run build --prefix backend
+      - run: npm run build --prefix frontend
+      - run: npx playwright install --with-deps chromium
+        working-directory: frontend
+      - run: npm exec -- playwright test --config playwright.config.ts
+        working-directory: frontend
+      - run: npm audit --audit-level=high
+      - run: npm audit --prefix backend --audit-level=high
+      - run: npm audit --prefix frontend --audit-level=high

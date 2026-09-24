@@ -4,6 +4,7 @@ export function readConfig(env: NodeJS.ProcessEnv) {
     NODE_ENV: z
       .enum(["development", "test", "production"])
       .default("development"),
+    FRONTEND_DIST: z.string().min(1).optional(),
     PORT: z.coerce.number().int().min(1).max(65535).default(5000),
     MONGODB_URI: z.string().min(1),
     APP_ORIGIN: z.url().default("http://localhost:5173"),

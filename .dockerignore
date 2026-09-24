@@ -1,0 +1,11 @@
+.git
+**/node_modules
+**/dist
+**/.env
+**/.env.*
+!**/.env.example
+output
+**/test-results
+**/playwright-report
+.agents
+.codex

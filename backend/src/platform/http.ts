@@ -1,4 +1,5 @@
 import express from "express";
+import { resolve } from "path";
 import helmet from "helmet";
 import cookieParser from "cookie-parser";
 import { randomBytes, timingSafeEqual } from "crypto";
@@ -254,6 +255,20 @@ export function createApp(d: {
   app.use("/api", (_req, _res, next) =>
     next(new AppError(404, "NOT_FOUND", "Endpoint not found.")),
   );
+  if (d.config.FRONTEND_DIST) {
+    app.use(
+      express.static(resolve(d.config.FRONTEND_DIST), {
+        index: "index.html",
+        dotfiles: "deny",
+        setHeaders(res, file) {
+          res.setHeader(
+            "Cache-Control",
+            file.endsWith(".html") ? "no-cache" : "public, max-age=3600",
+          );
+        },
+      }),
+    );
+  }
   app.use(
     (
       error: unknown,

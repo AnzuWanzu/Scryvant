@@ -1,0 +1,39 @@
+services:
+  mongo:
+    image: mongo:8
+    ports:
+      - "127.0.0.1:${MONGO_PORT:-27018}:27017"
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test:
+        ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+  mail:
+    image: axllent/mailpit:v1.29
+    ports:
+      - "127.0.0.1:${SMTP_PORT:-1026}:1025"
+      - "127.0.0.1:${MAIL_UI_PORT:-8026}:8025"
+  app:
+    build: .
+    profiles: ["app"]
+    ports:
+      - "127.0.0.1:${APP_PORT:-5174}:5000"
+    environment:
+      NODE_ENV: development
+      MONGODB_URI: mongodb://mongo:27017/scryvant
+      APP_ORIGIN: http://localhost:5174
+      SESSION_SECRET: ${SESSION_SECRET:?Set a unique random SESSION_SECRET}
+      SMTP_HOST: mail
+      SMTP_PORT: 1025
+      GEMINI_API_KEY: ""
+      GEMINI_MODEL: ""
+    depends_on:
+      mongo:
+        condition: service_healthy
+      mail:
+        condition: service_started
+volumes:
+  mongo-data:
