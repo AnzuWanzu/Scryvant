@@ -120,6 +120,25 @@ describe("SRD deterministic character operations", () => {
     );
     expect(derive(c).speed).toBe(35);
   });
+  test("background Origin feats appear on the sheet and Alert modifies initiative", () => {
+    const sage = derive(createSheet("c", "u", fixture(), "now"));
+    expect(sage.features).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ name: "Magic Initiate (Wizard)", page: 87 }),
+      ]),
+    );
+    const criminalChoice = fixture();
+    criminalChoice.backgroundId = "criminal";
+    criminalChoice.boosts = {
+      ...zeroScores(),
+      dexterity: 2,
+      constitution: 1,
+    };
+    criminalChoice.skills = ["Arcana", "History"];
+    const criminal = derive(createSheet("c", "u", criminalChoice, "now"));
+    expect(criminal.initiative).toBe(criminal.modifiers.dexterity + 2);
+    expect(criminal.features[0]?.name).toBe("Alert");
+  });
   test("slots follow full, half, and pact progression", () => {
     expect(slotMaximums("wizard", 20)).toEqual([4, 3, 3, 3, 3, 2, 2, 1, 1]);
     expect(slotMaximums("paladin", 1)[0]).toBe(2);

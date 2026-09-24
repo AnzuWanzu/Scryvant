@@ -135,6 +135,12 @@ export const demo: CharacterView = {
     ],
     features: [
       {
+        name: "Magic Initiate (Wizard)",
+        level: 1,
+        page: 87,
+        text: "Your Sage background grants the Magic Initiate Origin feat.",
+      },
+      {
         name: "Spellcasting",
         level: 1,
         page: 77,

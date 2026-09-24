@@ -118,6 +118,9 @@ export function validateChoices(c: CharacterChoices) {
 export function derive(c: Character): Derived {
   const cls = classes.find((v) => v.id === c.choices.classId)!;
   const bg = backgrounds.find((v) => v.id === c.choices.backgroundId)!;
+  const originFeat = feats.find((feat) =>
+    bg.feat.toLowerCase().startsWith(feat.name.toLowerCase()),
+  );
   const scores = zeroScores(),
     modifiers = zeroScores(),
     saves = zeroScores();
@@ -298,7 +301,9 @@ export function derive(c: Character): Derived {
     armorClass,
     speed: Math.max(0, speed),
     initiative:
-      modifiers.dexterity + (bg.id === "criminal" ? proficiency : 0) - penalty,
+      modifiers.dexterity +
+      (originFeat?.id === "alert" ? proficiency : 0) -
+      penalty,
     saves,
     skills,
     spellLimits: spellProgression[cls.id]?.[c.level - 1] ?? {
@@ -311,6 +316,16 @@ export function derive(c: Character): Derived {
     slots: slotMaximums(cls.id, c.level),
     resources,
     features: [
+      ...(originFeat
+        ? [
+            {
+              name: bg.feat,
+              level: 1,
+              page: originFeat.page,
+              text: originFeat.text,
+            },
+          ]
+        : []),
       ...classFeatures(cls.id, c.level),
       ...c.advancements
         .filter((a) => a.feat)
