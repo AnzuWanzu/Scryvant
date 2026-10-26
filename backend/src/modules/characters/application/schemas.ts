@@ -39,6 +39,12 @@ export const choicesSchema = z
         originFeat: z.string().max(40).optional(),
       })
       .strict(),
+    classOptions: z
+      .object({
+        expertise: z.array(z.string().max(30)).max(2),
+        fightingStyle: z.string().max(40).optional(),
+      })
+      .strict(),
     backgroundId: z.string().max(30),
     startingEquipment: z.enum(["package", "gold"]).default("package"),
     method: z.enum(["standard", "point-buy", "rolled"]),

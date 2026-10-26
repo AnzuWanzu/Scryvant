@@ -18,11 +18,16 @@ export type SpeciesOptions = {
   size?: "small" | "medium" | undefined;
   originFeat?: string | undefined;
 };
+export type ClassOptions = {
+  expertise: string[];
+  fightingStyle?: string | undefined;
+};
 export type CharacterChoices = {
   name: string;
   classId: string;
   speciesId: string;
   speciesOptions: SpeciesOptions;
+  classOptions: ClassOptions;
   backgroundId: string;
   startingEquipment?: "package" | "gold";
   method: "standard" | "point-buy" | "rolled";
@@ -152,6 +157,8 @@ export type RulesCatalog = {
     skills: string[];
     skillCount: number;
     armor: string[];
+    fightingStyles?: string[];
+    initialExpertise?: number;
   }[];
   species: {
     id: string;

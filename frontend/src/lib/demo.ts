@@ -16,6 +16,7 @@ export const demo: CharacterView = {
       spellAbility: "intelligence",
       skill: "Perception",
     },
+    classOptions: { expertise: [] },
     backgroundId: "sage",
     startingEquipment: "package",
     method: "standard",

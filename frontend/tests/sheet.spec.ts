@@ -151,6 +151,32 @@ test("creates a temporary character through the guided flow", async ({
   await expect(page.getByText("8 GP")).toBeVisible();
 });
 
+test("offers validated Fighter and Rogue training choices", async ({
+  page,
+}) => {
+  await page
+    .getByRole("button", { name: "Create your character", exact: true })
+    .click();
+  const dialog = page.getByRole("dialog");
+  const classSelect = dialog
+    .locator(".form-grid > label")
+    .filter({ hasText: "Class" })
+    .locator("select");
+
+  await classSelect.selectOption("fighter");
+  await dialog.getByRole("button", { name: "Proficiencies" }).click();
+  await expect(dialog.getByLabel("Fighting Style")).toBeVisible();
+  await dialog.getByLabel("Fighting Style").selectOption("archery");
+
+  await dialog.getByRole("button", { name: "Identity" }).click();
+  await classSelect.selectOption("rogue");
+  await dialog.getByRole("button", { name: "Proficiencies" }).click();
+  await expect(dialog.getByText("Expertise", { exact: true })).toBeVisible();
+  await expect(
+    dialog.locator(".training-choice input[type=checkbox]:checked"),
+  ).toHaveCount(2);
+});
+
 test("reading text scales with the viewport and stays readable on mobile", async ({
   page,
 }) => {

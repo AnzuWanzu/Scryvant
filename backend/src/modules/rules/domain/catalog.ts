@@ -47,6 +47,8 @@ export type ClassRule = {
   skills: string[];
   skillCount: number;
   armor: string[];
+  fightingStyles?: string[];
+  initialExpertise?: number;
 };
 export const classes: ClassRule[] = [
   {
@@ -144,6 +146,12 @@ export const classes: ClassRule[] = [
     ],
     skillCount: 2,
     armor: ["light", "medium", "heavy", "shield"],
+    fightingStyles: [
+      "archery",
+      "defense",
+      "great-weapon-fighting",
+      "two-weapon-fighting",
+    ],
   },
   {
     id: "monk",
@@ -234,6 +242,7 @@ export const classes: ClassRule[] = [
     ],
     skillCount: 4,
     armor: ["light"],
+    initialExpertise: 2,
   },
   {
     id: "sorcerer",

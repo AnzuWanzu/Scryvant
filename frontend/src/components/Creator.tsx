@@ -10,6 +10,7 @@ import type {
   LegacyCharacter,
   Advancement,
   SpeciesOptions,
+  ClassOptions,
 } from "../lib/types";
 const zero: Scores = {
   strength: 0,
@@ -28,6 +29,7 @@ const initial: CharacterChoices = {
     spellAbility: "intelligence",
     skill: "Perception",
   },
+  classOptions: { expertise: [] },
   backgroundId: "sage",
   startingEquipment: "package",
   method: "standard",
@@ -121,6 +123,30 @@ export function Creator({
       )
       .slice(0, classRule.skillCount);
   }
+  function classOptionsFor(
+    classRule: Catalog["classes"][number],
+    selectedSkills: string[],
+    background: Catalog["backgrounds"][number],
+    speciesSkill?: string,
+    preferred: ClassOptions = { expertise: [] },
+  ): ClassOptions {
+    const trained = [
+      ...selectedSkills,
+      ...background.skills,
+      ...(speciesSkill ? [speciesSkill] : []),
+    ];
+    const expertiseCount = classRule.initialExpertise ?? 0;
+    const expertise = [
+      ...preferred.expertise.filter((skill) => trained.includes(skill)),
+      ...trained.filter((skill) => !preferred.expertise.includes(skill)),
+    ].slice(0, expertiseCount);
+    const fightingStyle = classRule.fightingStyles?.includes(
+      preferred.fightingStyle ?? "",
+    )
+      ? preferred.fightingStyle
+      : classRule.fightingStyles?.[0];
+    return { expertise, fightingStyle };
+  }
   function change<K extends keyof CharacterChoices>(
     key: K,
     v: CharacterChoices[K],
@@ -175,10 +201,21 @@ export function Creator({
                     const c = catalog.classes.find(
                       (c) => c.id === e.target.value,
                     )!;
+                    const skills = classSkills(
+                      c,
+                      bg,
+                      value.speciesOptions.skill,
+                    );
                     setValue((v) => ({
                       ...v,
                       classId: c.id,
-                      skills: classSkills(c, bg, v.speciesOptions.skill),
+                      skills,
+                      classOptions: classOptionsFor(
+                        c,
+                        skills,
+                        bg,
+                        v.speciesOptions.skill,
+                      ),
                       spells: [],
                       appearance: {
                         ...v.appearance,
@@ -206,11 +243,19 @@ export function Creator({
                       (species) => species.id === e.target.value,
                     )!;
                     const speciesOptions = speciesOptionsFor(selected, bg);
+                    const skills = classSkills(cls, bg, speciesOptions.skill);
                     setValue((old) => ({
                       ...old,
                       speciesId: selected.id,
                       speciesOptions,
-                      skills: classSkills(cls, bg, speciesOptions.skill),
+                      skills,
+                      classOptions: classOptionsFor(
+                        cls,
+                        skills,
+                        bg,
+                        speciesOptions.skill,
+                        old.classOptions,
+                      ),
                     }));
                   }}
                 >
@@ -242,12 +287,20 @@ export function Creator({
                       b,
                       value.speciesOptions,
                     );
+                    const skills = classSkills(cls, b, speciesOptions.skill);
                     setValue((v) => ({
                       ...v,
                       backgroundId: b.id,
                       boosts,
                       speciesOptions,
-                      skills: classSkills(cls, b, speciesOptions.skill),
+                      skills,
+                      classOptions: classOptionsFor(
+                        cls,
+                        skills,
+                        b,
+                        speciesOptions.skill,
+                        v.classOptions,
+                      ),
                     }));
                   }}
                 >
@@ -346,14 +399,24 @@ export function Creator({
                         value={value.speciesOptions.skill}
                         onChange={(e) => {
                           const skill = e.target.value;
-                          setValue((old) => ({
-                            ...old,
-                            speciesOptions: {
-                              ...old.speciesOptions,
-                              skill,
-                            },
-                            skills: classSkills(cls, bg, skill),
-                          }));
+                          setValue((old) => {
+                            const skills = classSkills(cls, bg, skill);
+                            return {
+                              ...old,
+                              speciesOptions: {
+                                ...old.speciesOptions,
+                                skill,
+                              },
+                              skills,
+                              classOptions: classOptionsFor(
+                                cls,
+                                skills,
+                                bg,
+                                skill,
+                                old.classOptions,
+                              ),
+                            };
+                          });
                         }}
                       >
                         {speciesRule.choices.skills
@@ -517,18 +580,99 @@ export function Creator({
                         value.skills.length >= cls.skillCount
                       }
                       onChange={(e) =>
-                        change(
-                          "skills",
-                          e.target.checked
-                            ? [...value.skills, s]
-                            : value.skills.filter((v) => v !== s),
-                        )
+                        setValue((old) => {
+                          const skills = e.target.checked
+                            ? [...old.skills, s]
+                            : old.skills.filter((value) => value !== s);
+                          return {
+                            ...old,
+                            skills,
+                            classOptions: classOptionsFor(
+                              cls,
+                              skills,
+                              bg,
+                              old.speciesOptions.skill,
+                              old.classOptions,
+                            ),
+                          };
+                        })
                       }
                     />
                     {s}
                   </label>
                 ))}
             </div>
+            {cls.fightingStyles && (
+              <div className="training-choice">
+                <label>
+                  Fighting Style
+                  <select
+                    value={value.classOptions.fightingStyle}
+                    onChange={(e) =>
+                      change("classOptions", {
+                        ...value.classOptions,
+                        fightingStyle: e.target.value,
+                      })
+                    }
+                  >
+                    {cls.fightingStyles.map((styleId) => (
+                      <option key={styleId} value={styleId}>
+                        {catalog.feats.find((feat) => feat.id === styleId)
+                          ?.name ?? title(styleId)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <small>
+                  {
+                    catalog.feats.find(
+                      (feat) => feat.id === value.classOptions.fightingStyle,
+                    )?.text
+                  }
+                </small>
+              </div>
+            )}
+            {!!cls.initialExpertise && (
+              <div className="training-choice">
+                <strong>Expertise</strong>
+                <p className="muted">
+                  Choose {cls.initialExpertise} trained skills. Your proficiency
+                  bonus is doubled for them.
+                </p>
+                <div className="choice-grid">
+                  {[
+                    ...value.skills,
+                    ...bg.skills,
+                    ...(value.speciesOptions.skill
+                      ? [value.speciesOptions.skill]
+                      : []),
+                  ].map((skill) => (
+                    <label className="check-choice" key={skill}>
+                      <input
+                        type="checkbox"
+                        checked={value.classOptions.expertise.includes(skill)}
+                        disabled={
+                          !value.classOptions.expertise.includes(skill) &&
+                          value.classOptions.expertise.length >=
+                            cls.initialExpertise!
+                        }
+                        onChange={(e) =>
+                          change("classOptions", {
+                            ...value.classOptions,
+                            expertise: e.target.checked
+                              ? [...value.classOptions.expertise, skill]
+                              : value.classOptions.expertise.filter(
+                                  (entry) => entry !== skill,
+                                ),
+                          })
+                        }
+                      />
+                      {skill}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
             {cls.casting && (
               <>
                 <h3>First spells</h3>

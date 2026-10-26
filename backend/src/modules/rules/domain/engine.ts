@@ -149,6 +149,29 @@ export function validateChoices(c: CharacterChoices) {
     fail(
       "Choose the required number of distinct class skills, excluding background proficiencies.",
     );
+  const trainedSkills = [
+    ...c.skills,
+    ...bg.skills,
+    ...(c.speciesOptions.skill ? [c.speciesOptions.skill] : []),
+  ];
+  const expertiseCount = cls.initialExpertise ?? 0;
+  if (
+    c.classOptions.expertise.length !== expertiseCount ||
+    new Set(c.classOptions.expertise).size !== expertiseCount ||
+    c.classOptions.expertise.some((skill) => !trainedSkills.includes(skill))
+  )
+    fail(
+      expertiseCount
+        ? `Choose ${expertiseCount} trained skills for Expertise.`
+        : "This class does not gain Expertise at level 1.",
+    );
+  if (
+    cls.fightingStyles &&
+    !cls.fightingStyles.includes(c.classOptions.fightingStyle ?? "")
+  )
+    fail("Choose an available Fighting Style.");
+  if (!cls.fightingStyles && c.classOptions.fightingStyle !== undefined)
+    fail("This class does not choose a Fighting Style at level 1.");
 }
 export function derive(c: Character): Derived {
   const cls = classes.find((v) => v.id === c.choices.classId)!;
@@ -158,6 +181,7 @@ export function derive(c: Character): Derived {
     ...speciesRule.defaults,
     ...(c.choices.speciesOptions ?? {}),
   };
+  const classOptions = c.choices.classOptions ?? { expertise: [] };
   const originFeat = feats.find((feat) =>
     bg.feat.toLowerCase().startsWith(feat.name.toLowerCase()),
   );
@@ -208,11 +232,15 @@ export function derive(c: Character): Derived {
     Object.entries(skillAbilities).map(([s, a]) => [
       s,
       modifiers[a] +
-        ([...c.choices.skills, ...bg.skills, speciesOptions.skill].includes(s)
-          ? proficiency
-          : cls.id === "bard" && c.level >= 2
-            ? Math.floor(proficiency / 2)
-            : 0) -
+        (classOptions.expertise.includes(s)
+          ? proficiency * 2
+          : [...c.choices.skills, ...bg.skills, speciesOptions.skill].includes(
+                s,
+              )
+            ? proficiency
+            : cls.id === "bard" && c.level >= 2
+              ? Math.floor(proficiency / 2)
+              : 0) -
         penalty,
     ]),
   );
@@ -244,6 +272,7 @@ export function derive(c: Character): Derived {
   else if (cls.id === "sorcerer" && c.level >= 3)
     armorClass = 10 + modifiers.dexterity + modifiers.charisma;
   if (shield) armorClass += 2;
+  if (armor && classOptions.fightingStyle === "defense") armorClass += 1;
   const resources: Derived["resources"] = [];
   const add = (
     id: string,
@@ -353,7 +382,10 @@ export function derive(c: Character): Derived {
       return {
         name: w.name,
         bonus:
-          m + (w.category === "simple" || martial ? proficiency : 0) - penalty,
+          m +
+          (w.category === "simple" || martial ? proficiency : 0) +
+          (w.ranged && classOptions.fightingStyle === "archery" ? 2 : 0) -
+          penalty,
         damage: `${w.damage} ${m >= 0 ? "+" : "−"} ${Math.abs(m)}`,
       };
     });
@@ -423,6 +455,21 @@ export function derive(c: Character): Derived {
               page: speciesOriginFeat.page,
               text: `Your Human Versatile trait grants this additional Origin feat. ${speciesOriginFeat.text}`,
             },
+          ]
+        : []),
+      ...(classOptions.fightingStyle
+        ? [
+            (() => {
+              const style = feats.find(
+                (feat) => feat.id === classOptions.fightingStyle,
+              )!;
+              return {
+                name: style.name,
+                level: 1,
+                page: style.page,
+                text: style.text,
+              };
+            })(),
           ]
         : []),
       ...classFeatures(cls.id, c.level),

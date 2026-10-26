@@ -1414,6 +1414,20 @@ h1 {
   grid-template-columns: repeat(auto-fit, minmax(185px, 1fr));
   gap: 12px;
 }
+.training-choice {
+  display: grid;
+  gap: 10px;
+  margin: 18px 0;
+  padding: 16px;
+  border-left: 3px solid #779b78;
+  background: #1f2b1c;
+}
+.training-choice > small {
+  color: #aebba2;
+  font-size: 0.92rem;
+  line-height: 1.55;
+  white-space: pre-line;
+}
 .quiet-callout {
   display: flex;
   align-items: center;

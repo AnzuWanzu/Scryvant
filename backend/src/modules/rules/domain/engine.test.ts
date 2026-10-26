@@ -179,6 +179,47 @@ describe("SRD deterministic character operations", () => {
       "different Origin feat",
     );
   });
+  test("Rogue Expertise doubles proficiency only for trained choices", () => {
+    const rogue = createSheet("c", "u", fixture("rogue"), "now");
+    const derived = derive(rogue);
+    expect(rogue.choices.classOptions.expertise).toEqual([
+      "Acrobatics",
+      "Athletics",
+    ]);
+    expect(derived.skills.Acrobatics).toBe(derived.modifiers.dexterity + 4);
+    expect(derived.skills.Athletics).toBe(derived.modifiers.strength + 4);
+
+    const invalid = fixture("rogue");
+    invalid.classOptions.expertise = ["Acrobatics", "Stealth"];
+    expect(() => createSheet("c", "u", invalid, "now")).toThrow(
+      "trained skills",
+    );
+  });
+  test("Fighting Styles affect armor and ranged attacks", () => {
+    const defense = fixture("fighter");
+    defense.classOptions.fightingStyle = "defense";
+    const armored = createSheet("c", "u", defense, "now");
+    armored.state.inventory.push({
+      id: "leather",
+      quantity: 1,
+      equipped: true,
+    });
+    expect(derive(armored).armorClass).toBe(14);
+
+    const archery = fixture("fighter");
+    archery.classOptions.fightingStyle = "archery";
+    const archer = createSheet("c", "u", archery, "now");
+    archer.state.inventory.push({
+      id: "shortbow",
+      quantity: 1,
+      equipped: true,
+    });
+    expect(derive(archer).attacks).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ name: "Shortbow", bonus: 6 }),
+      ]),
+    );
+  });
   test("background Origin feats appear on the sheet and Alert modifies initiative", () => {
     const sage = derive(createSheet("c", "u", fixture(), "now"));
     expect(sage.features).toEqual(
