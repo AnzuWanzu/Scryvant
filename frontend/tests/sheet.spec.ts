@@ -123,6 +123,19 @@ test("creates a temporary character through the guided flow", async ({
     .click();
   const dialog = page.getByRole("dialog");
   await dialog.getByLabel("Character name").fill("Lyra Starfall");
+  await dialog
+    .locator(".form-grid > label")
+    .filter({ hasText: "Species" })
+    .locator("select")
+    .selectOption({ label: "Human" });
+  await expect(dialog.getByLabel("Species skill")).toBeVisible();
+  await dialog.getByLabel("Species skill").selectOption("Perception");
+  await dialog
+    .locator(".species-choice-grid > label")
+    .filter({ hasText: "Size" })
+    .locator("select")
+    .selectOption("medium");
+  await dialog.getByLabel("Versatile Origin feat").selectOption("alert");
   await dialog.getByRole("button", { name: "Continue", exact: true }).click();
   await dialog.getByRole("button", { name: "Continue", exact: true }).click();
   await dialog.getByRole("button", { name: "Continue", exact: true }).click();
@@ -136,6 +149,32 @@ test("creates a temporary character through the guided flow", async ({
   await page.getByRole("button", { name: "Inventory", exact: true }).click();
   await expect(page.getByText("Quarterstaff", { exact: true })).toBeVisible();
   await expect(page.getByText("8 GP")).toBeVisible();
+});
+
+test("offers validated Fighter and Rogue training choices", async ({
+  page,
+}) => {
+  await page
+    .getByRole("button", { name: "Create your character", exact: true })
+    .click();
+  const dialog = page.getByRole("dialog");
+  const classSelect = dialog
+    .locator(".form-grid > label")
+    .filter({ hasText: "Class" })
+    .locator("select");
+
+  await classSelect.selectOption("fighter");
+  await dialog.getByRole("button", { name: "Proficiencies" }).click();
+  await expect(dialog.getByLabel("Fighting Style")).toBeVisible();
+  await dialog.getByLabel("Fighting Style").selectOption("archery");
+
+  await dialog.getByRole("button", { name: "Identity" }).click();
+  await classSelect.selectOption("rogue");
+  await dialog.getByRole("button", { name: "Proficiencies" }).click();
+  await expect(dialog.getByText("Expertise", { exact: true })).toBeVisible();
+  await expect(
+    dialog.locator(".training-choice input[type=checkbox]:checked"),
+  ).toHaveCount(2);
 });
 
 test("reading text scales with the viewport and stays readable on mobile", async ({

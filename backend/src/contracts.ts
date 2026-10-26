@@ -11,10 +11,23 @@ export type Appearance = {
   palette: "jade" | "ember" | "violet";
   accessory: "staff" | "sword" | "bow";
 };
+export type SpeciesOptions = {
+  heritage?: string | undefined;
+  spellAbility?: Ability | undefined;
+  skill?: string | undefined;
+  size?: "small" | "medium" | undefined;
+  originFeat?: string | undefined;
+};
+export type ClassOptions = {
+  expertise: string[];
+  fightingStyle?: string | undefined;
+};
 export type CharacterChoices = {
   name: string;
   classId: string;
   speciesId: string;
+  speciesOptions: SpeciesOptions;
+  classOptions: ClassOptions;
   backgroundId: string;
   startingEquipment?: "package" | "gold";
   method: "standard" | "point-buy" | "rolled";
@@ -144,8 +157,25 @@ export type RulesCatalog = {
     skills: string[];
     skillCount: number;
     armor: string[];
+    fightingStyles?: string[];
+    initialExpertise?: number;
   }[];
-  species: { id: string; name: string; speed: number; page: number }[];
+  species: {
+    id: string;
+    name: string;
+    speed: number;
+    page: number;
+    traitSummary: string;
+    heritageLabel?: string;
+    choices: {
+      heritages?: string[];
+      spellAbilities?: Ability[];
+      skills?: string[];
+      sizes?: ("small" | "medium")[];
+      originFeats?: string[];
+    };
+    defaults: SpeciesOptions;
+  }[];
   backgrounds: {
     id: string;
     name: string;

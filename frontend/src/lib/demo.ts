@@ -11,6 +11,12 @@ export const demo: CharacterView = {
     name: "Vaelis Moonweaver",
     classId: "wizard",
     speciesId: "elf",
+    speciesOptions: {
+      heritage: "high-elf",
+      spellAbility: "intelligence",
+      skill: "Perception",
+    },
+    classOptions: { expertise: [] },
     backgroundId: "sage",
     startingEquipment: "package",
     method: "standard",
@@ -117,7 +123,7 @@ export const demo: CharacterView = {
       Investigation: 5,
       Medicine: 1,
       Nature: 3,
-      Perception: 1,
+      Perception: 3,
       Performance: 0,
       Persuasion: 0,
       Religion: 3,
@@ -134,6 +140,12 @@ export const demo: CharacterView = {
       { id: "arcane-recovery", name: "Arcane Recovery", max: 1, rest: "long" },
     ],
     features: [
+      {
+        name: "Elf Traits",
+        level: 1,
+        page: 84,
+        text: "Darkvision, Fey Ancestry, Keen Senses, Trance, and magical benefits from your elven lineage. Elven lineage: High Elf. Species spellcasting ability: intelligence. Species skill proficiency: Perception.",
+      },
       {
         name: "Magic Initiate (Wizard)",
         level: 1,

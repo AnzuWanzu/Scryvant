@@ -9,7 +9,9 @@ permissions:
 
 jobs:
   verify:
-    runs-on: ubuntu-latest
+    # Pin the runner because ubuntu-latest began migrating to Ubuntu 26 in
+    # October 2026, where the MongoDB service failed before checkout.
+    runs-on: ubuntu-24.04
     services:
       mongo:
         image: mongo:8
