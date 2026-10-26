@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { demo } from "../src/lib/demo";
 
 test.beforeEach(async ({ page }) => {
   await page.route("**/api/v1/session", (route) =>
@@ -175,6 +176,78 @@ test("offers validated Fighter and Rogue training choices", async ({
   await expect(
     dialog.locator(".training-choice input[type=checkbox]:checked"),
   ).toHaveCount(2);
+});
+
+test("records the SRD subclass when advancing to level 3", async ({ page }) => {
+  await page
+    .getByRole("button", { name: "Create your character", exact: true })
+    .click();
+  const creator = page.getByRole("dialog");
+  await creator.getByLabel("Character name").fill("Elara Voss");
+  await creator.getByRole("button", { name: "Continue", exact: true }).click();
+  await creator.getByRole("button", { name: "Continue", exact: true }).click();
+  await creator.getByRole("button", { name: "Continue", exact: true }).click();
+  await creator
+    .getByRole("button", { name: "Create character", exact: true })
+    .click();
+
+  await page.getByRole("button", { name: "Level up", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Advance to level 2", exact: true })
+    .click();
+  await expect(page.getByText("Wizard 2", { exact: true })).toBeVisible();
+
+  await page.getByRole("button", { name: "Level up", exact: true }).click();
+  await expect(page.getByLabel("Subclass path")).toHaveValue("evoker");
+  await page
+    .getByRole("button", { name: "Advance to level 3", exact: true })
+    .click();
+  await expect(page.locator(".meta-badge")).toHaveText("Evoker");
+});
+
+test("existing level 3 characters confirm a missing subclass", async ({
+  page,
+}) => {
+  const id = "ac568c92-3d44-4ca4-bdb0-1e4b9c0cf95d";
+  const incomplete = structuredClone(demo);
+  incomplete.id = id;
+  incomplete.userId = "player";
+  incomplete.advancements[1]!.subclassId = undefined;
+  incomplete.derived.features = incomplete.derived.features.filter(
+    (feature) => feature.name !== "Evoker",
+  );
+  const completed = structuredClone(incomplete);
+  completed.revision = 1;
+  completed.advancements[1]!.subclassId = "evoker";
+
+  await page.unroute("**/api/v1/session");
+  await page.route("**/api/v1/session", (route) =>
+    route.fulfill({
+      json: {
+        user: { id: "player", username: "Elara", email: "elara@example.test" },
+        csrf: "a".repeat(64),
+      },
+    }),
+  );
+  await page.route(`**/api/v1/characters/${id}/commands`, async (route) => {
+    const body = route.request().postDataJSON();
+    expect(body.command).toEqual({ type: "subclass", subclassId: "evoker" });
+    await route.fulfill({ json: completed });
+  });
+  await page.route(`**/api/v1/characters/${id}`, (route) =>
+    route.fulfill({ json: incomplete }),
+  );
+  await page.route("**/api/v1/characters", (route) =>
+    route.fulfill({ json: { characters: [incomplete] } }),
+  );
+  await page.reload();
+
+  await expect(page.getByLabel("Subclass required")).toBeVisible();
+  await page
+    .getByRole("button", { name: "Choose Evoker", exact: true })
+    .click();
+  await expect(page.getByLabel("Subclass required")).toHaveCount(0);
+  await expect(page.locator(".meta-badge")).toHaveText("Evoker");
 });
 
 test("reading text scales with the viewport and stays readable on mobile", async ({

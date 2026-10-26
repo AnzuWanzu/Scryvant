@@ -20,16 +20,17 @@ export function LevelUp({
   character: c,
   onClose,
   onCommand,
-  die,
+  classRule,
   feats,
 }: {
   character: CharacterView;
   onClose: () => void;
   onCommand: (c: CharacterCommand) => Promise<void>;
-  die: number;
+  classRule: Catalog["classes"][number];
   feats: Catalog["feats"];
 }) {
   const next = c.level + 1;
+  const die = classRule.die;
   const hasFeat = [
     4,
     8,
@@ -67,6 +68,21 @@ export function LevelUp({
           Use the fixed value {die / 2 + 1}, or record a d{die} roll.
         </small>
       </label>
+      {next === 3 && (
+        <section className="subclass-choice">
+          <span className="eyebrow">YOUR DEFINING PATH</span>
+          <label>
+            Subclass path
+            <select value={classRule.subclassId} disabled>
+              <option value={classRule.subclassId}>{classRule.subclass}</option>
+            </select>
+          </label>
+          <p className="muted">
+            The SRD 5.2.1 provides this supported {classRule.name} subclass. Its
+            features unlock only after this choice is recorded.
+          </p>
+        </section>
+      )}
       {hasFeat && (
         <>
           <label>
@@ -125,7 +141,13 @@ export function LevelUp({
         onClick={() => {
           void onCommand({
             type: "level-up",
-            advancement: { level: next, boosts, feat: hasFeat ? feat : "", hp },
+            advancement: {
+              level: next,
+              boosts,
+              feat: hasFeat ? feat : "",
+              hp,
+              subclassId: next === 3 ? classRule.subclassId : undefined,
+            },
           });
           onClose();
         }}

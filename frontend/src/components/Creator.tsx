@@ -73,7 +73,17 @@ export function Creator({
           Math.min(19, Number(legacy?.legacy.level ?? 1) - 1),
         ),
       },
-      (_, i) => ({ level: i + 2, boosts: { ...zero }, feat: "", hp: 4 }),
+      (_, i) => ({
+        level: i + 2,
+        boosts: { ...zero },
+        feat: "",
+        hp: 4,
+        subclassId:
+          i + 2 === 3
+            ? catalog.classes.find((entry) => entry.id === initial.classId)
+                ?.subclassId
+            : undefined,
+      }),
     ),
   );
   const [step, setStep] = useState(0);
@@ -222,6 +232,14 @@ export function Creator({
                         accessory: c.caster === "none" ? "sword" : "staff",
                       },
                     }));
+                    if (legacy)
+                      setAdvancements((entries) =>
+                        entries.map((entry) => ({
+                          ...entry,
+                          subclassId:
+                            entry.level === 3 ? c.subclassId : undefined,
+                        })),
+                      );
                   }}
                 >
                   {catalog.classes.map((c) => (

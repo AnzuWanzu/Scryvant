@@ -59,6 +59,20 @@ export function LegacyReconciliation({
                 Fixed value: {cls.die / 2 + 1}, before Constitution.
               </small>
             </label>
+            {a.level === 3 && (
+              <label>
+                Subclass path
+                <select
+                  value={a.subclassId ?? ""}
+                  onChange={(e) =>
+                    update(index, { subclassId: e.target.value })
+                  }
+                >
+                  <option value="">Choose a subclass…</option>
+                  <option value={cls.subclassId}>{cls.subclass}</option>
+                </select>
+              </label>
+            )}
             {featLevel && (
               <>
                 <label>
