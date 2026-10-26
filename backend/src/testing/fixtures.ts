@@ -7,6 +7,11 @@ export function fixture(classId = "wizard"): CharacterChoices {
     name: "Aster",
     classId,
     speciesId: "elf",
+    speciesOptions: {
+      heritage: "high-elf",
+      spellAbility: "intelligence",
+      skill: "Perception",
+    },
     backgroundId: "sage",
     startingEquipment: "package",
     method: "standard",

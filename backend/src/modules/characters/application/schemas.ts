@@ -21,6 +21,24 @@ export const choicesSchema = z
     name: z.string().trim().min(1).max(50),
     classId: z.string().max(30),
     speciesId: z.string().max(30),
+    speciesOptions: z
+      .object({
+        heritage: z.string().max(30).optional(),
+        spellAbility: z
+          .enum([
+            "strength",
+            "dexterity",
+            "constitution",
+            "intelligence",
+            "wisdom",
+            "charisma",
+          ])
+          .optional(),
+        skill: z.string().max(30).optional(),
+        size: z.enum(["small", "medium"]).optional(),
+        originFeat: z.string().max(40).optional(),
+      })
+      .strict(),
     backgroundId: z.string().max(30),
     startingEquipment: z.enum(["package", "gold"]).default("package"),
     method: z.enum(["standard", "point-buy", "rolled"]),

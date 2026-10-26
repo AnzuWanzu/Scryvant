@@ -123,6 +123,19 @@ test("creates a temporary character through the guided flow", async ({
     .click();
   const dialog = page.getByRole("dialog");
   await dialog.getByLabel("Character name").fill("Lyra Starfall");
+  await dialog
+    .locator(".form-grid > label")
+    .filter({ hasText: "Species" })
+    .locator("select")
+    .selectOption({ label: "Human" });
+  await expect(dialog.getByLabel("Species skill")).toBeVisible();
+  await dialog.getByLabel("Species skill").selectOption("Perception");
+  await dialog
+    .locator(".species-choice-grid > label")
+    .filter({ hasText: "Size" })
+    .locator("select")
+    .selectOption("medium");
+  await dialog.getByLabel("Versatile Origin feat").selectOption("alert");
   await dialog.getByRole("button", { name: "Continue", exact: true }).click();
   await dialog.getByRole("button", { name: "Continue", exact: true }).click();
   await dialog.getByRole("button", { name: "Continue", exact: true }).click();

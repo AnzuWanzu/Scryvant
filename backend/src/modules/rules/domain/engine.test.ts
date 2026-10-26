@@ -7,10 +7,21 @@ import {
   slotMaximums,
   zeroScores,
 } from "./engine";
-import { classes, spells } from "./catalog";
+import { classes, species, spells } from "./catalog";
 import { fixture } from "../../../testing/fixtures";
 
 describe("SRD deterministic character operations", () => {
+  for (const speciesRule of species)
+    test(`${speciesRule.name}: default species choices create a valid sheet`, () => {
+      const choices = fixture();
+      choices.speciesId = speciesRule.id;
+      choices.speciesOptions = { ...speciesRule.defaults };
+      const character = createSheet("c", "u", choices, "now");
+      expect(derive(character).features[0]).toMatchObject({
+        name: `${speciesRule.name} Traits`,
+        page: speciesRule.page,
+      });
+    });
   for (const cls of classes)
     test(`${cls.name}: creation and progression across levels 1–20`, () => {
       let c = createSheet(
@@ -115,10 +126,58 @@ describe("SRD deterministic character operations", () => {
     const c = createSheet(
       "c",
       "u",
-      { ...fixture(), speciesId: "goliath" },
+      {
+        ...fixture(),
+        speciesId: "goliath",
+        speciesOptions: { heritage: "stone-giant" },
+      },
       "now",
     );
     expect(derive(c).speed).toBe(35);
+  });
+  test("species choices are validated and affect the derived sheet", () => {
+    const invalid = fixture();
+    invalid.speciesOptions.heritage = "moon-elf";
+    expect(() => createSheet("c", "u", invalid, "now")).toThrow(
+      "valid Elf heritage",
+    );
+
+    const woodElf = fixture();
+    woodElf.speciesOptions.heritage = "wood-elf";
+    const derivedElf = derive(createSheet("c", "u", woodElf, "now"));
+    expect(derivedElf.speed).toBe(35);
+    expect(derivedElf.skills.Perception).toBe(3);
+    expect(derivedElf.features[0]).toMatchObject({
+      name: "Elf Traits",
+      page: 84,
+    });
+  });
+  test("Human Versatile grants a distinct Origin feat and skill", () => {
+    const human = fixture();
+    human.speciesId = "human";
+    human.speciesOptions = {
+      size: "medium",
+      skill: "Perception",
+      originFeat: "alert",
+    };
+    const derived = derive(createSheet("c", "u", human, "now"));
+    expect(derived.initiative).toBe(derived.modifiers.dexterity + 2);
+    expect(derived.skills.Perception).toBe(derived.modifiers.wisdom + 2);
+    expect(derived.features).toEqual(
+      expect.arrayContaining([expect.objectContaining({ name: "Alert" })]),
+    );
+    expect(derived.resources).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: "heroic-inspiration", max: 1 }),
+      ]),
+    );
+
+    human.backgroundId = "criminal";
+    human.boosts = { ...zeroScores(), dexterity: 2, constitution: 1 };
+    human.skills = ["Arcana", "History"];
+    expect(() => createSheet("c", "u", human, "now")).toThrow(
+      "different Origin feat",
+    );
   });
   test("background Origin feats appear on the sheet and Alert modifies initiative", () => {
     const sage = derive(createSheet("c", "u", fixture(), "now"));
@@ -137,7 +196,9 @@ describe("SRD deterministic character operations", () => {
     criminalChoice.skills = ["Arcana", "History"];
     const criminal = derive(createSheet("c", "u", criminalChoice, "now"));
     expect(criminal.initiative).toBe(criminal.modifiers.dexterity + 2);
-    expect(criminal.features[0]?.name).toBe("Alert");
+    expect(criminal.features).toEqual(
+      expect.arrayContaining([expect.objectContaining({ name: "Alert" })]),
+    );
   });
   test("slots follow full, half, and pact progression", () => {
     expect(slotMaximums("wizard", 20)).toEqual([4, 3, 3, 3, 3, 2, 2, 1, 1]);

@@ -68,9 +68,39 @@ export function slotMaximums(classId: string, level: number): number[] {
 }
 export function validateChoices(c: CharacterChoices) {
   const cls = classes.find((v) => v.id === c.classId),
-    bg = backgrounds.find((v) => v.id === c.backgroundId);
-  if (!cls || !bg || !species.some((v) => v.id === c.speciesId))
-    fail("Choose a supported class, species, and background.");
+    bg = backgrounds.find((v) => v.id === c.backgroundId),
+    speciesRule = species.find((v) => v.id === c.speciesId);
+  if (!cls || !bg || !speciesRule) {
+    return fail("Choose a supported class, species, and background.");
+  }
+  const optionChecks = [
+    ["heritage", speciesRule.choices.heritages],
+    ["spellAbility", speciesRule.choices.spellAbilities],
+    ["skill", speciesRule.choices.skills],
+    ["size", speciesRule.choices.sizes],
+    ["originFeat", speciesRule.choices.originFeats],
+  ] as const;
+  for (const [key, allowed] of optionChecks) {
+    const selected = c.speciesOptions[key];
+    if (
+      (allowed && (!selected || !allowed.includes(selected as never))) ||
+      (!allowed && selected !== undefined)
+    )
+      fail(`Choose a valid ${speciesRule.name} ${key}.`);
+  }
+  if (
+    c.speciesOptions.skill &&
+    (c.skills.includes(c.speciesOptions.skill) ||
+      bg.skills.includes(c.speciesOptions.skill))
+  )
+    fail(
+      "Species, background, and class skill proficiencies must be distinct.",
+    );
+  const backgroundFeat = feats.find((feat) =>
+    bg.feat.toLowerCase().startsWith(feat.name.toLowerCase()),
+  );
+  if (c.speciesOptions.originFeat === backgroundFeat?.id)
+    fail("Choose a different Origin feat from the one in your background.");
   const values = abilities.map((a) => c.baseScores[a]);
   if (values.some((n) => !Number.isInteger(n) || n < 3 || n > 18))
     fail("Base abilities must be integers between 3 and 18.");
@@ -109,7 +139,12 @@ export function validateChoices(c: CharacterChoices) {
   if (
     new Set(c.skills).size !== c.skills.length ||
     c.skills.length !== cls!.skillCount ||
-    c.skills.some((s) => !cls!.skills.includes(s) || bg!.skills.includes(s))
+    c.skills.some(
+      (s) =>
+        !cls!.skills.includes(s) ||
+        bg!.skills.includes(s) ||
+        s === c.speciesOptions.skill,
+    )
   )
     fail(
       "Choose the required number of distinct class skills, excluding background proficiencies.",
@@ -118,8 +153,16 @@ export function validateChoices(c: CharacterChoices) {
 export function derive(c: Character): Derived {
   const cls = classes.find((v) => v.id === c.choices.classId)!;
   const bg = backgrounds.find((v) => v.id === c.choices.backgroundId)!;
+  const speciesRule = species.find((v) => v.id === c.choices.speciesId)!;
+  const speciesOptions = {
+    ...speciesRule.defaults,
+    ...(c.choices.speciesOptions ?? {}),
+  };
   const originFeat = feats.find((feat) =>
     bg.feat.toLowerCase().startsWith(feat.name.toLowerCase()),
+  );
+  const speciesOriginFeat = feats.find(
+    (feat) => feat.id === speciesOptions.originFeat,
   );
   const scores = zeroScores(),
     modifiers = zeroScores(),
@@ -165,7 +208,7 @@ export function derive(c: Character): Derived {
     Object.entries(skillAbilities).map(([s, a]) => [
       s,
       modifiers[a] +
-        ([...c.choices.skills, ...bg.skills].includes(s)
+        ([...c.choices.skills, ...bg.skills, speciesOptions.skill].includes(s)
           ? proficiency
           : cls.id === "bard" && c.level >= 2
             ? Math.floor(proficiency / 2)
@@ -208,6 +251,24 @@ export function derive(c: Character): Derived {
     max: number,
     rest: "short" | "long" | "rage" = "long",
   ) => resources.push({ id, name, max, rest });
+  if (speciesRule.id === "dragonborn") {
+    add("breath-weapon", "Breath Weapon", proficiency);
+    if (c.level >= 5) add("draconic-flight", "Draconic Flight", 1);
+  }
+  if (speciesRule.id === "dwarf")
+    add("stonecunning", "Stonecunning", proficiency);
+  if (speciesRule.id === "gnome" && speciesOptions.heritage === "forest-gnome")
+    add("speak-with-animals", "Speak with Animals", proficiency);
+  if (speciesRule.id === "goliath") {
+    add("giant-ancestry", "Giant Ancestry", proficiency);
+    if (c.level >= 5) add("large-form", "Large Form", 1);
+  }
+  if (speciesRule.id === "human")
+    add("heroic-inspiration", "Heroic Inspiration", 1);
+  if (speciesRule.id === "orc") {
+    add("adrenaline-rush", "Adrenaline Rush", proficiency, "short");
+    add("relentless-endurance", "Relentless Endurance", 1);
+  }
   if (cls.id === "barbarian")
     add(
       "rage",
@@ -266,7 +327,10 @@ export function derive(c: Character): Derived {
       if (c.level >= l) add(`arcanum-${i + 6}`, `Mystic Arcanum ${i + 6}`, 1);
   if (cls.id === "wizard") add("arcane-recovery", "Arcane Recovery", 1);
   const speed =
-    (species.find((s) => s.id === c.choices.speciesId)?.speed ?? 30) +
+    speciesRule.speed +
+    (speciesRule.id === "elf" && speciesOptions.heritage === "wood-elf"
+      ? 5
+      : 0) +
     (cls.id === "barbarian" && c.level >= 5 && armor?.category !== "heavy"
       ? 10
       : 0) +
@@ -302,7 +366,9 @@ export function derive(c: Character): Derived {
     speed: Math.max(0, speed),
     initiative:
       modifiers.dexterity +
-      (originFeat?.id === "alert" ? proficiency : 0) -
+      (originFeat?.id === "alert" || speciesOriginFeat?.id === "alert"
+        ? proficiency
+        : 0) -
       penalty,
     saves,
     skills,
@@ -316,6 +382,29 @@ export function derive(c: Character): Derived {
     slots: slotMaximums(cls.id, c.level),
     resources,
     features: [
+      {
+        name: `${speciesRule.name} Traits`,
+        level: 1,
+        page: speciesRule.page,
+        text: [
+          speciesRule.traitSummary,
+          speciesOptions.heritage
+            ? `${speciesRule.heritageLabel ?? "Heritage"}: ${speciesOptions.heritage
+                .split("-")
+                .map((word) => word[0]!.toUpperCase() + word.slice(1))
+                .join(" ")}.`
+            : "",
+          speciesOptions.spellAbility
+            ? `Species spellcasting ability: ${speciesOptions.spellAbility}.`
+            : "",
+          speciesOptions.size ? `Size: ${speciesOptions.size}.` : "",
+          speciesOptions.skill
+            ? `Species skill proficiency: ${speciesOptions.skill}.`
+            : "",
+        ]
+          .filter(Boolean)
+          .join(" "),
+      },
       ...(originFeat
         ? [
             {
@@ -323,6 +412,16 @@ export function derive(c: Character): Derived {
               level: 1,
               page: originFeat.page,
               text: originFeat.text,
+            },
+          ]
+        : []),
+      ...(speciesOriginFeat
+        ? [
+            {
+              name: speciesOriginFeat.name,
+              level: 1,
+              page: speciesOriginFeat.page,
+              text: `Your Human Versatile trait grants this additional Origin feat. ${speciesOriginFeat.text}`,
             },
           ]
         : []),

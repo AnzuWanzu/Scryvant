@@ -9,6 +9,7 @@ import type {
   Ability,
   LegacyCharacter,
   Advancement,
+  SpeciesOptions,
 } from "../lib/types";
 const zero: Scores = {
   strength: 0,
@@ -22,6 +23,11 @@ const initial: CharacterChoices = {
   name: "",
   classId: "wizard",
   speciesId: "elf",
+  speciesOptions: {
+    heritage: "high-elf",
+    spellAbility: "intelligence",
+    skill: "Perception",
+  },
   backgroundId: "sage",
   startingEquipment: "package",
   method: "standard",
@@ -39,6 +45,11 @@ const initial: CharacterChoices = {
   narrative: "",
   appearance: { palette: "jade", accessory: "staff" },
 };
+const title = (value: string) =>
+  value
+    .split("-")
+    .map((word) => word[0]!.toUpperCase() + word.slice(1))
+    .join(" ");
 export function Creator({
   catalog,
   onClose,
@@ -68,6 +79,48 @@ export function Creator({
   const [busy, setBusy] = useState(false);
   const cls = catalog.classes.find((c) => c.id === value.classId)!;
   const bg = catalog.backgrounds.find((b) => b.id === value.backgroundId)!;
+  const speciesRule = catalog.species.find(
+    (species) => species.id === value.speciesId,
+  )!;
+  function speciesOptionsFor(
+    rule: Catalog["species"][number],
+    background: Catalog["backgrounds"][number],
+    preferred: SpeciesOptions = rule.defaults,
+  ): SpeciesOptions {
+    const options = { ...rule.defaults, ...preferred };
+    if (rule.choices.skills) {
+      options.skill = rule.choices.skills.find(
+        (skill) =>
+          skill === options.skill && !background.skills.includes(skill),
+      );
+      options.skill ??= rule.choices.skills.find(
+        (skill) => !background.skills.includes(skill),
+      );
+    }
+    if (rule.choices.originFeats) {
+      const backgroundFeat = catalog.feats.find((feat) =>
+        background.feat.toLowerCase().startsWith(feat.name.toLowerCase()),
+      )?.id;
+      options.originFeat = rule.choices.originFeats.find(
+        (feat) => feat === options.originFeat && feat !== backgroundFeat,
+      );
+      options.originFeat ??= rule.choices.originFeats.find(
+        (feat) => feat !== backgroundFeat,
+      );
+    }
+    return options;
+  }
+  function classSkills(
+    classRule: Catalog["classes"][number],
+    background: Catalog["backgrounds"][number],
+    speciesSkill?: string,
+  ) {
+    return classRule.skills
+      .filter(
+        (skill) => !background.skills.includes(skill) && skill !== speciesSkill,
+      )
+      .slice(0, classRule.skillCount);
+  }
   function change<K extends keyof CharacterChoices>(
     key: K,
     v: CharacterChoices[K],
@@ -125,9 +178,7 @@ export function Creator({
                     setValue((v) => ({
                       ...v,
                       classId: c.id,
-                      skills: c.skills
-                        .filter((s) => !bg.skills.includes(s))
-                        .slice(0, c.skillCount),
+                      skills: classSkills(c, bg, v.speciesOptions.skill),
                       spells: [],
                       appearance: {
                         ...v.appearance,
@@ -150,7 +201,18 @@ export function Creator({
                 Species
                 <select
                   value={value.speciesId}
-                  onChange={(e) => change("speciesId", e.target.value)}
+                  onChange={(e) => {
+                    const selected = catalog.species.find(
+                      (species) => species.id === e.target.value,
+                    )!;
+                    const speciesOptions = speciesOptionsFor(selected, bg);
+                    setValue((old) => ({
+                      ...old,
+                      speciesId: selected.id,
+                      speciesOptions,
+                      skills: classSkills(cls, bg, speciesOptions.skill),
+                    }));
+                  }}
                 >
                   {catalog.species.map((s) => (
                     <option key={s.id} value={s.id}>
@@ -158,6 +220,9 @@ export function Creator({
                     </option>
                   ))}
                 </select>
+                <small>
+                  {speciesRule.speed}-foot speed · SRD page {speciesRule.page}
+                </small>
               </label>
               <label>
                 Background
@@ -172,13 +237,17 @@ export function Creator({
                       [b.abilities[0]!]: 2,
                       [b.abilities[1]!]: 1,
                     };
+                    const speciesOptions = speciesOptionsFor(
+                      speciesRule,
+                      b,
+                      value.speciesOptions,
+                    );
                     setValue((v) => ({
                       ...v,
                       backgroundId: b.id,
                       boosts,
-                      skills: cls.skills
-                        .filter((s) => !b.skills.includes(s))
-                        .slice(0, cls.skillCount),
+                      speciesOptions,
+                      skills: classSkills(cls, b, speciesOptions.skill),
                     }));
                   }}
                 >
@@ -219,6 +288,138 @@ export function Creator({
                         .join(", ")}
                 </small>
               </label>
+              <section
+                className="species-origin"
+                aria-labelledby="species-options-title"
+              >
+                <div>
+                  <strong id="species-options-title">
+                    {speciesRule.name} traits
+                  </strong>
+                  <small>{speciesRule.traitSummary}</small>
+                </div>
+                <div className="species-choice-grid">
+                  {speciesRule.choices.heritages && (
+                    <label>
+                      {speciesRule.heritageLabel ?? "Heritage"}
+                      <select
+                        value={value.speciesOptions.heritage}
+                        onChange={(e) =>
+                          change("speciesOptions", {
+                            ...value.speciesOptions,
+                            heritage: e.target.value,
+                          })
+                        }
+                      >
+                        {speciesRule.choices.heritages.map((heritage) => (
+                          <option key={heritage} value={heritage}>
+                            {title(heritage)}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  )}
+                  {speciesRule.choices.spellAbilities && (
+                    <label>
+                      Innate spell ability
+                      <select
+                        value={value.speciesOptions.spellAbility}
+                        onChange={(e) =>
+                          change("speciesOptions", {
+                            ...value.speciesOptions,
+                            spellAbility: e.target.value as Ability,
+                          })
+                        }
+                      >
+                        {speciesRule.choices.spellAbilities.map((ability) => (
+                          <option key={ability} value={ability}>
+                            {title(ability)}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  )}
+                  {speciesRule.choices.skills && (
+                    <label>
+                      Species skill
+                      <select
+                        value={value.speciesOptions.skill}
+                        onChange={(e) => {
+                          const skill = e.target.value;
+                          setValue((old) => ({
+                            ...old,
+                            speciesOptions: {
+                              ...old.speciesOptions,
+                              skill,
+                            },
+                            skills: classSkills(cls, bg, skill),
+                          }));
+                        }}
+                      >
+                        {speciesRule.choices.skills
+                          .filter((skill) => !bg.skills.includes(skill))
+                          .map((skill) => (
+                            <option key={skill} value={skill}>
+                              {skill}
+                            </option>
+                          ))}
+                      </select>
+                    </label>
+                  )}
+                  {speciesRule.choices.sizes && (
+                    <label>
+                      Size
+                      <select
+                        value={value.speciesOptions.size}
+                        onChange={(e) =>
+                          change("speciesOptions", {
+                            ...value.speciesOptions,
+                            size: e.target.value as "small" | "medium",
+                          })
+                        }
+                      >
+                        {speciesRule.choices.sizes.map((size) => (
+                          <option key={size} value={size}>
+                            {title(size)}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  )}
+                  {speciesRule.choices.originFeats && (
+                    <label>
+                      Versatile Origin feat
+                      <select
+                        value={value.speciesOptions.originFeat}
+                        onChange={(e) =>
+                          change("speciesOptions", {
+                            ...value.speciesOptions,
+                            originFeat: e.target.value,
+                          })
+                        }
+                      >
+                        {speciesRule.choices.originFeats
+                          .filter(
+                            (featId) =>
+                              !bg.feat
+                                .toLowerCase()
+                                .startsWith(
+                                  catalog.feats
+                                    .find((feat) => feat.id === featId)!
+                                    .name.toLowerCase(),
+                                ),
+                          )
+                          .map((featId) => (
+                            <option key={featId} value={featId}>
+                              {catalog.feats.find((feat) => feat.id === featId)
+                                ?.name ?? title(featId)}
+                            </option>
+                          ))}
+                      </select>
+                    </label>
+                  )}
+                </div>
+              </section>
             </div>
             <div className="quiet-callout">
               <Sparkles size={18} />
@@ -295,16 +496,26 @@ export function Creator({
             <h3>A particular set of skills.</h3>
             <p className="muted">
               Choose {cls.skillCount} class skills. Your background already
-              grants {bg.skills.join(" and ")}.
+              grants {bg.skills.join(" and ")}
+              {value.speciesOptions.skill
+                ? `, and your species grants ${value.speciesOptions.skill}.`
+                : "."}
             </p>
             <div className="choice-grid">
               {cls.skills
-                .filter((s) => !bg.skills.includes(s))
+                .filter(
+                  (s) =>
+                    !bg.skills.includes(s) && s !== value.speciesOptions.skill,
+                )
                 .map((s) => (
                   <label className="check-choice" key={s}>
                     <input
                       type="checkbox"
                       checked={value.skills.includes(s)}
+                      disabled={
+                        !value.skills.includes(s) &&
+                        value.skills.length >= cls.skillCount
+                      }
                       onChange={(e) =>
                         change(
                           "skills",

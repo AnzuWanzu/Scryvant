@@ -1384,6 +1384,36 @@ h1 {
   grid-template-columns: 1fr 1fr;
   gap: 16px;
 }
+.species-origin {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid #4c613e;
+  border-radius: 6px;
+  background:
+    radial-gradient(circle at 92% 10%, #5386761f, transparent 35%), #202d1c;
+}
+.species-origin > div:first-child {
+  display: grid;
+  gap: 5px;
+}
+.species-origin strong {
+  color: #d8c99d;
+  font-family: var(--font-display);
+  font-size: 1.14rem;
+  letter-spacing: 0.02em;
+}
+.species-origin small {
+  color: #aebba2;
+  font-size: 0.92rem;
+  line-height: 1.55;
+}
+.species-choice-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(185px, 1fr));
+  gap: 12px;
+}
 .quiet-callout {
   display: flex;
   align-items: center;

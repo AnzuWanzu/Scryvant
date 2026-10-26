@@ -1,4 +1,4 @@
-import type { Ability } from "../../../contracts";
+import type { Ability, RulesCatalog } from "../../../contracts";
 import srd from "./srd.json";
 import progressionData from "./progression.json";
 export const feats = progressionData.feats;
@@ -300,22 +300,148 @@ export const classes: ClassRule[] = [
     armor: [],
   },
 ];
-export const species = [
-  "Dragonborn",
-  "Dwarf",
-  "Elf",
-  "Gnome",
-  "Goliath",
-  "Halfling",
-  "Human",
-  "Orc",
-  "Tiefling",
-].map((name) => ({
-  id: name.toLowerCase(),
-  name,
-  speed: name === "Goliath" ? 35 : 30,
-  page: 83,
-}));
+export const species: RulesCatalog["species"] = [
+  {
+    id: "dragonborn",
+    name: "Dragonborn",
+    speed: 30,
+    page: 84,
+    traitSummary:
+      "Breath Weapon, resistance matching your draconic ancestry, 60-foot Darkvision, and Draconic Flight from level 5.",
+    heritageLabel: "Draconic ancestry",
+    choices: {
+      heritages: [
+        "black",
+        "blue",
+        "brass",
+        "bronze",
+        "copper",
+        "gold",
+        "green",
+        "red",
+        "silver",
+        "white",
+      ],
+    },
+    defaults: { heritage: "red" },
+  },
+  {
+    id: "dwarf",
+    name: "Dwarf",
+    speed: 30,
+    page: 84,
+    traitSummary:
+      "120-foot Darkvision, Dwarven Resilience, extra Hit Points from Dwarven Toughness, and Stonecunning.",
+    choices: {},
+    defaults: {},
+  },
+  {
+    id: "elf",
+    name: "Elf",
+    speed: 30,
+    page: 84,
+    traitSummary:
+      "Darkvision, Fey Ancestry, Keen Senses, Trance, and magical benefits from your elven lineage.",
+    heritageLabel: "Elven lineage",
+    choices: {
+      heritages: ["drow", "high-elf", "wood-elf"],
+      spellAbilities: ["intelligence", "wisdom", "charisma"],
+      skills: ["Insight", "Perception", "Survival"],
+    },
+    defaults: {
+      heritage: "high-elf",
+      spellAbility: "intelligence",
+      skill: "Perception",
+    },
+  },
+  {
+    id: "gnome",
+    name: "Gnome",
+    speed: 30,
+    page: 85,
+    traitSummary:
+      "60-foot Darkvision, Gnomish Cunning, and magic granted by your gnomish lineage.",
+    heritageLabel: "Gnomish lineage",
+    choices: {
+      heritages: ["forest-gnome", "rock-gnome"],
+      spellAbilities: ["intelligence", "wisdom", "charisma"],
+    },
+    defaults: { heritage: "forest-gnome", spellAbility: "intelligence" },
+  },
+  {
+    id: "goliath",
+    name: "Goliath",
+    speed: 35,
+    page: 85,
+    traitSummary:
+      "A Giant Ancestry boon, Powerful Build, and Large Form from level 5.",
+    heritageLabel: "Giant ancestry",
+    choices: {
+      heritages: [
+        "cloud-giant",
+        "fire-giant",
+        "frost-giant",
+        "hill-giant",
+        "stone-giant",
+        "storm-giant",
+      ],
+    },
+    defaults: { heritage: "stone-giant" },
+  },
+  {
+    id: "halfling",
+    name: "Halfling",
+    speed: 30,
+    page: 86,
+    traitSummary:
+      "Brave, Halfling Nimbleness, Luck, and the ability to hide behind larger creatures.",
+    choices: {},
+    defaults: {},
+  },
+  {
+    id: "human",
+    name: "Human",
+    speed: 30,
+    page: 86,
+    traitSummary:
+      "Heroic Inspiration after a Long Rest, one extra skill proficiency, and an additional Origin feat.",
+    choices: {
+      sizes: ["small", "medium"],
+      skills: Object.keys(skillAbilities),
+      originFeats: ["alert", "magic-initiate", "savage-attacker", "skilled"],
+    },
+    defaults: { size: "medium", skill: "Perception", originFeat: "skilled" },
+  },
+  {
+    id: "orc",
+    name: "Orc",
+    speed: 30,
+    page: 86,
+    traitSummary:
+      "Adrenaline Rush, 120-foot Darkvision, and Relentless Endurance.",
+    choices: {},
+    defaults: {},
+  },
+  {
+    id: "tiefling",
+    name: "Tiefling",
+    speed: 30,
+    page: 86,
+    traitSummary:
+      "60-foot Darkvision, Thaumaturgy, resistance and spells granted by your Fiendish Legacy.",
+    heritageLabel: "Fiendish legacy",
+    choices: {
+      heritages: ["abyssal", "chthonic", "infernal"],
+      spellAbilities: ["intelligence", "wisdom", "charisma"],
+      sizes: ["small", "medium"],
+    },
+    defaults: {
+      heritage: "infernal",
+      spellAbility: "charisma",
+      size: "medium",
+    },
+  },
+];
 export const backgrounds = [
   {
     id: "acolyte",

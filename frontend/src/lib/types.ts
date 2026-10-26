@@ -8,6 +8,7 @@ export type {
   Proposal,
   Scores,
   Ability,
+  SpeciesOptions,
   UserView,
   RulesCatalog as Catalog,
 } from "../../../backend/src/contracts";
