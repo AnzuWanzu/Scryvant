@@ -41,6 +41,7 @@ export type ClassRule = {
   saves: Ability[];
   casting: Ability | null;
   caster: "full" | "half" | "pact" | "none";
+  subclassId: string;
   subclass: string;
   page: number;
   end: number;
@@ -58,6 +59,7 @@ export const classes: ClassRule[] = [
     saves: ["strength", "constitution"],
     casting: null,
     caster: "none",
+    subclassId: "path-of-the-berserker",
     subclass: "Path of the Berserker",
     page: 28,
     end: 30,
@@ -79,6 +81,7 @@ export const classes: ClassRule[] = [
     saves: ["dexterity", "charisma"],
     casting: "charisma",
     caster: "full",
+    subclassId: "college-of-lore",
     subclass: "College of Lore",
     page: 31,
     end: 35,
@@ -93,6 +96,7 @@ export const classes: ClassRule[] = [
     saves: ["wisdom", "charisma"],
     casting: "wisdom",
     caster: "full",
+    subclassId: "life-domain",
     subclass: "Life Domain",
     page: 36,
     end: 40,
@@ -107,6 +111,7 @@ export const classes: ClassRule[] = [
     saves: ["intelligence", "wisdom"],
     casting: "wisdom",
     caster: "full",
+    subclassId: "circle-of-the-land",
     subclass: "Circle of the Land",
     page: 41,
     end: 46,
@@ -130,6 +135,7 @@ export const classes: ClassRule[] = [
     saves: ["strength", "constitution"],
     casting: null,
     caster: "none",
+    subclassId: "champion",
     subclass: "Champion",
     page: 47,
     end: 49,
@@ -160,6 +166,7 @@ export const classes: ClassRule[] = [
     saves: ["strength", "dexterity"],
     casting: null,
     caster: "none",
+    subclassId: "warrior-of-the-open-hand",
     subclass: "Warrior of the Open Hand",
     page: 49,
     end: 52,
@@ -181,6 +188,7 @@ export const classes: ClassRule[] = [
     saves: ["wisdom", "charisma"],
     casting: "charisma",
     caster: "half",
+    subclassId: "oath-of-devotion",
     subclass: "Oath of Devotion",
     page: 53,
     end: 56,
@@ -202,6 +210,7 @@ export const classes: ClassRule[] = [
     saves: ["strength", "dexterity"],
     casting: "wisdom",
     caster: "half",
+    subclassId: "hunter",
     subclass: "Hunter",
     page: 57,
     end: 61,
@@ -225,6 +234,7 @@ export const classes: ClassRule[] = [
     saves: ["dexterity", "intelligence"],
     casting: null,
     caster: "none",
+    subclassId: "thief",
     subclass: "Thief",
     page: 61,
     end: 64,
@@ -251,6 +261,7 @@ export const classes: ClassRule[] = [
     saves: ["constitution", "charisma"],
     casting: "charisma",
     caster: "full",
+    subclassId: "draconic-sorcery",
     subclass: "Draconic Sorcery",
     page: 65,
     end: 70,
@@ -272,6 +283,7 @@ export const classes: ClassRule[] = [
     saves: ["wisdom", "charisma"],
     casting: "charisma",
     caster: "pact",
+    subclassId: "fiend-patron",
     subclass: "Fiend Patron",
     page: 70,
     end: 77,
@@ -294,6 +306,7 @@ export const classes: ClassRule[] = [
     saves: ["intelligence", "wisdom"],
     casting: "intelligence",
     caster: "full",
+    subclassId: "evoker",
     subclass: "Evoker",
     page: 77,
     end: 82,
@@ -674,7 +687,11 @@ export const equipment: ItemRule[] = [
 ];
 export const spells = srd.spells;
 export const pages = srd.pages;
-export function classFeatures(id: string, level: number) {
+export function classFeatures(
+  id: string,
+  level: number,
+  includeSubclass = false,
+) {
   const rule = classes.find((c) => c.id === id)!;
   const source = pages.map((p) => `\n[[PAGE:${p.page}]]\n${p.text}`).join("\n");
   const begin = source.indexOf(`\n${rule.name}\nCore ${rule.name} Traits\n`);
@@ -683,9 +700,16 @@ export function classFeatures(id: string, level: number) {
     ? source.indexOf(`\n${next.name}\nCore ${next.name} Traits\n`, begin + 1)
     : source.indexOf("\nCharacter Origins\n", begin);
   const section = source.slice(begin, end > begin ? end : undefined);
+  const subclassStart = section.indexOf(
+    `\n${rule.name} Subclass: ${rule.subclass}\n`,
+  );
   const matches = [...section.matchAll(/^Level (\d+): ([^\n]+)\n/gm)];
   return matches
-    .filter((m) => Number(m[1]) <= level)
+    .filter(
+      (m) =>
+        Number(m[1]) <= level &&
+        (includeSubclass || subclassStart < 0 || m.index! < subclassStart),
+    )
     .map((m) => {
       const position = matches.indexOf(m);
       const pageMarkers = [

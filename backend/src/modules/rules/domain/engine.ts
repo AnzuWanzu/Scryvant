@@ -472,7 +472,13 @@ export function derive(c: Character): Derived {
             })(),
           ]
         : []),
-      ...classFeatures(cls.id, c.level),
+      ...classFeatures(
+        cls.id,
+        c.level,
+        c.advancements.some(
+          (advancement) => advancement.subclassId === cls.subclassId,
+        ),
+      ),
       ...c.advancements
         .filter((a) => a.feat)
         .map((a) => {
@@ -728,12 +734,29 @@ export function applyCommand(
       c.choices.spells = command.spells;
       validateSpells(c);
       break;
+    case "subclass": {
+      if (c.level < 3) fail("Reach level 3 before choosing a subclass.");
+      const advancement =
+        c.advancements.find((entry) => entry.level === 3) ??
+        fail("Level 3 advancement is missing.");
+      if (advancement.subclassId)
+        fail("This character already has a subclass.");
+      if (command.subclassId !== cls.subclassId)
+        fail(`Choose the supported ${cls.name} subclass.`);
+      advancement.subclassId = command.subclassId;
+      break;
+    }
     case "level-up": {
       const a = command.advancement;
       if (c.level >= 20 || a.level !== c.level + 1)
         fail("Advance exactly one level at a time, up to 20.");
       if (a.hp < 1 || a.hp > cls.die)
         fail("Record a valid Hit Die roll or its fixed value.");
+      if (
+        (a.level === 3 && a.subclassId !== cls.subclassId) ||
+        (a.level !== 3 && a.subclassId !== undefined)
+      )
+        fail(`Choose the supported ${cls.name} subclass at level 3.`);
       const asi = [
         4,
         8,

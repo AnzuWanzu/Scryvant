@@ -12,7 +12,7 @@ import { assistanceService } from "../modules/assistance/application/service";
 import {
   choicesSchema,
   updateSchema,
-  scores,
+  advancementSchema,
 } from "../modules/characters/application/schemas";
 import { catalog } from "../modules/rules/domain/catalog";
 import { derive } from "../modules/rules/domain/engine";
@@ -181,18 +181,7 @@ export function createApp(d: {
       .object({
         choices: choicesSchema,
         acknowledgeChanges: z.literal(true),
-        advancements: z
-          .array(
-            z
-              .object({
-                level: z.number().int().min(2).max(20),
-                boosts: scores,
-                feat: z.string().max(80),
-                hp: z.number().int().min(1).max(12),
-              })
-              .strict(),
-          )
-          .max(19),
+        advancements: z.array(advancementSchema).max(19),
       })
       .strict()
       .parse(req.body);

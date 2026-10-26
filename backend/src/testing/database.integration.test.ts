@@ -337,6 +337,7 @@ describe("MongoDB and HTTP security integration", () => {
       hp: 4,
       feat: [4, 8].includes(i + 2) ? "ability-score-improvement" : "",
       boosts: { ...zeroScores(), strength: [4, 8].includes(i + 2) ? 2 : 0 },
+      subclassId: i + 2 === 3 ? "evoker" : undefined,
     }));
     const completed = await a
       .post(`/characters/${id}/complete`, {
