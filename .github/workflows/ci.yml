@@ -9,12 +9,12 @@ permissions:
 
 jobs:
   verify:
-    # Pin the runner because ubuntu-latest began migrating to Ubuntu 26 in
-    # October 2026, where the MongoDB service failed before checkout.
+    # Keep the runner and MongoDB line explicit. MongoDB 8 cannot start on
+    # the Linux 6.19 kernel currently used by GitHub's hosted runners.
     runs-on: ubuntu-24.04
     services:
       mongo:
-        image: mongo:8
+        image: mongo:7.0
         ports:
           - 27017:27017
         options: >-
