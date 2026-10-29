@@ -61,6 +61,7 @@ export const demo: CharacterView = {
     },
     feat: "",
     hp: 4,
+    subclassId: level === 3 ? "evoker" : undefined,
   })),
   state: {
     hp: 20,

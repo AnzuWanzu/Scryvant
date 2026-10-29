@@ -56,6 +56,15 @@ export const choicesSchema = z
     appearance,
   })
   .strict();
+export const advancementSchema = z
+  .object({
+    level: int(2, 20),
+    boosts: scores,
+    feat: z.string().max(80),
+    hp: int(1, 12),
+    subclassId: z.string().max(80).optional(),
+  })
+  .strict();
 export const commandSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("damage"), amount: int(1, 1000) }).strict(),
   z.object({ type: z.literal("heal"), amount: int(1, 1000) }).strict(),
@@ -114,15 +123,14 @@ export const commandSchema = z.discriminatedUnion("type", [
     .strict(),
   z
     .object({
+      type: z.literal("subclass"),
+      subclassId: z.string().max(80),
+    })
+    .strict(),
+  z
+    .object({
       type: z.literal("level-up"),
-      advancement: z
-        .object({
-          level: int(2, 20),
-          boosts: scores,
-          feat: z.string().max(80),
-          hp: int(1, 12),
-        })
-        .strict(),
+      advancement: advancementSchema,
     })
     .strict(),
 ]);

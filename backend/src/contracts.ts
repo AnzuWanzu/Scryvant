@@ -43,6 +43,7 @@ export type Advancement = {
   boosts: Scores;
   feat: string;
   hp: number;
+  subclassId?: string | undefined;
 };
 export type InventoryEntry = {
   id: string;
@@ -114,6 +115,7 @@ export type CharacterCommand =
   | { type: "narrative"; narrative: string }
   | { type: "appearance"; appearance: Appearance }
   | { type: "spells"; spells: string[] }
+  | { type: "subclass"; subclassId: string }
   | { type: "level-up"; advancement: Advancement };
 export type UserView = { id: string; username: string; email: string };
 export type Proposal = {
@@ -151,6 +153,7 @@ export type RulesCatalog = {
     saves: Ability[];
     casting: Ability | null;
     caster: "full" | "half" | "pact" | "none";
+    subclassId: string;
     subclass: string;
     page: number;
     end: number;

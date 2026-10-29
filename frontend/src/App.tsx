@@ -278,6 +278,12 @@ function App() {
   }
   const knownSpells =
     catalog?.spells.filter((s) => c.choices.spells.includes(s.id)) ?? [];
+  const classRule = catalog?.classes.find(
+    (entry) => entry.id === c.choices.classId,
+  );
+  const subclassId = c.advancements.find(
+    (advancement) => advancement.level === 3,
+  )?.subclassId;
   return (
     <div className="app-shell">
       <a className="skip-link" href="#character-sheet">
@@ -394,8 +400,9 @@ function App() {
               <span>{title(c.choices.backgroundId)}</span>
               <span className="meta-badge">
                 {c.level >= 3
-                  ? (catalog?.classes.find((v) => v.id === c.choices.classId)
-                      ?.subclass ?? "Evoker")
+                  ? subclassId
+                    ? (classRule?.subclass ?? "Subclass recorded")
+                    : "Subclass pending"
                   : "A new beginning"}
               </span>
             </div>
@@ -435,6 +442,31 @@ function App() {
               <X size={15} />
             </button>
           </div>
+        )}
+        {c.level >= 3 && classRule && !subclassId && (
+          <section className="completion-banner" aria-label="Subclass required">
+            <div>
+              <span className="eyebrow">COMPLETE THIS CHAPTER</span>
+              <strong>Choose your {classRule.name} subclass</strong>
+              <p>
+                Your existing character remains unchanged until you confirm the
+                supported SRD path.
+              </p>
+            </div>
+            <button
+              className="button gold"
+              disabled={saving}
+              onClick={() =>
+                void command({
+                  type: "subclass",
+                  subclassId: classRule.subclassId,
+                })
+              }
+            >
+              Choose {classRule.subclass}
+              <ArrowUpRight size={15} />
+            </button>
+          </section>
         )}
         <div className="workspace">
           <section className="portrait-column">
@@ -476,9 +508,9 @@ function App() {
                   <strong>{title(c.choices.classId)}</strong>
                   <span>
                     {c.level >= 3
-                      ? (catalog?.classes.find(
-                          (v) => v.id === c.choices.classId,
-                        )?.subclass ?? "Evoker")
+                      ? subclassId
+                        ? (classRule?.subclass ?? "Subclass recorded")
+                        : "Subclass pending"
                       : "The first chapter"}
                   </span>
                 </div>
@@ -1417,15 +1449,13 @@ function App() {
           </button>
         </Modal>
       )}
-      {levelUp && (
+      {levelUp && classRule && (
         <LevelUp
           feats={catalog?.feats ?? []}
           character={c}
           onClose={() => setLevelUp(false)}
           onCommand={command}
-          die={
-            catalog?.classes.find((v) => v.id === c.choices.classId)?.die ?? 6
-          }
+          classRule={classRule}
         />
       )}
       {history && (

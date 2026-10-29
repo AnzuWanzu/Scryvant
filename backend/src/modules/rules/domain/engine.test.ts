@@ -61,6 +61,7 @@ describe("SRD deterministic character operations", () => {
                   ? "boon-of-combat-prowess"
                   : "",
               hp: cls.die / 2 + 1,
+              subclassId: level + 1 === 3 ? cls.subclassId : undefined,
             },
           },
           () => 1,
@@ -218,6 +219,93 @@ describe("SRD deterministic character operations", () => {
       expect.arrayContaining([
         expect.objectContaining({ name: "Shortbow", bonus: 6 }),
       ]),
+    );
+  });
+  test("level 3 requires an explicit supported subclass choice", () => {
+    let wizard = createSheet("c", "u", fixture("wizard"), "now");
+    wizard = applyCommand(
+      wizard,
+      {
+        type: "level-up",
+        advancement: {
+          level: 2,
+          boosts: zeroScores(),
+          feat: "",
+          hp: 4,
+        },
+      },
+      () => 1,
+    );
+
+    expect(() =>
+      applyCommand(
+        wizard,
+        {
+          type: "level-up",
+          advancement: {
+            level: 3,
+            boosts: zeroScores(),
+            feat: "",
+            hp: 4,
+          },
+        },
+        () => 1,
+      ),
+    ).toThrow("subclass");
+  });
+  test("subclass features appear only after the level 3 choice is recorded", () => {
+    let wizard = createSheet("c", "u", fixture("wizard"), "now");
+    for (const level of [2, 3])
+      wizard = applyCommand(
+        wizard,
+        {
+          type: "level-up",
+          advancement: {
+            level,
+            boosts: zeroScores(),
+            feat: "",
+            hp: 4,
+            subclassId: level === 3 ? "evoker" : undefined,
+          },
+        },
+        () => 1,
+      );
+
+    expect(derive(wizard).features.map((feature) => feature.name)).toContain(
+      "Evocation Savant",
+    );
+    wizard.advancements[1]!.subclassId = undefined;
+    expect(
+      derive(wizard).features.map((feature) => feature.name),
+    ).not.toContain("Evocation Savant");
+  });
+  test("an existing level 3 character can explicitly complete its subclass", () => {
+    let wizard = createSheet("c", "u", fixture("wizard"), "now");
+    for (const level of [2, 3])
+      wizard = applyCommand(
+        wizard,
+        {
+          type: "level-up",
+          advancement: {
+            level,
+            boosts: zeroScores(),
+            feat: "",
+            hp: 4,
+            subclassId: level === 3 ? "evoker" : undefined,
+          },
+        },
+        () => 1,
+      );
+    wizard.advancements[1]!.subclassId = undefined;
+
+    wizard = applyCommand(
+      wizard,
+      { type: "subclass", subclassId: "evoker" },
+      () => 1,
+    );
+    expect(wizard.advancements[1]!.subclassId).toBe("evoker");
+    expect(derive(wizard).features.map((feature) => feature.name)).toContain(
+      "Evocation Savant",
     );
   });
   test("background Origin feats appear on the sheet and Alert modifies initiative", () => {
